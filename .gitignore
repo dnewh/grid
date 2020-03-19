@@ -36,6 +36,8 @@ tests/sawtooth_sc_test/protobuf/
 /docs/source/_autogen/
 /docs/source/cli/output/
 
+/grid-ui/sapling-dev-server/product
+
 # misc
 .DS_Store
 .env.local
