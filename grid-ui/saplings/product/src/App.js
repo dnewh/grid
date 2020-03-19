@@ -14,28 +14,50 @@
  * limitations under the License.
  */
 
-import React from 'react';
+import React, { useState } from 'react';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { library } from '@fortawesome/fontawesome-svg-core';
 import {
   faCaretUp,
   faCaretDown,
   faCheck,
-  faPenSquare
+  faPenSquare,
+  faPlus
 } from '@fortawesome/free-solid-svg-icons';
 
 import { ServiceProvider } from './state/service-context';
 import FilterBar from './components/FilterBar';
 import ProductsTable from './components/ProductsTable';
+import { AddProductForm } from './components/AddProductForm';
 import './App.scss';
 
 library.add(faCaretUp, faCaretDown, faCheck, faPenSquare);
 
 function App() {
+  const [activeForm, setActiveForm] = useState(null);
+
+  function addProduct() {
+    setActiveForm('add-product');
+  }
+
+  function openForm(formName) {
+    switch (formName) {
+      case 'add-product':
+        return <AddProductForm closeFn={() => setActiveForm(null)} />;
+      default:
+    }
+    return null;
+  }
+
   return (
     <ServiceProvider>
       <div className="product-app">
         <FilterBar />
         <ProductsTable />
+        <button className="fab add-product" type="button" onClick={addProduct}>
+          <FontAwesomeIcon icon={faPlus} />
+        </button>
+        {activeForm && openForm(activeForm)}
       </div>
     </ServiceProvider>
   );
