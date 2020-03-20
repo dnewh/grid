@@ -21,11 +21,15 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import './ProductCard.scss';
 
 function ProductCard(props) {
-  const { gtin, name, owner, imageURL } = props;
+  const { gtin, name, owner, imageURL, editFn, properties } = props;
 
   return (
     <div className="product-card">
-      <button type="button" className="product-card-edit-button">
+      <button
+        type="button"
+        className="product-card-edit-button"
+        onClick={() => editFn(properties)}
+      >
         <FontAwesomeIcon className="icon" icon="pen-square" />
       </button>
       <div className="product-card-content">
@@ -46,7 +50,9 @@ ProductCard.propTypes = {
   gtin: PropTypes.string.isRequired,
   name: PropTypes.string.isRequired,
   owner: PropTypes.string.isRequired,
-  imageURL: PropTypes.string
+  imageURL: PropTypes.string,
+  editFn: PropTypes.func.isRequired,
+  properties: PropTypes.array.isRequired
 };
 
 ProductCard.defaultProps = {

@@ -15,13 +15,14 @@
  */
 
 import React, { useState, useEffect } from 'react';
+import PropTypes from 'prop-types';
 import { useServiceState } from '../state/service-context';
 
 import './ProductsTable.scss';
 import ProductCard from './ProductCard';
 import mockProducts from '../test/mock-products';
 
-function ProductsTable() {
+function ProductsTable({ editFn }) {
   const [products, setProducts] = useState(mockProducts);
   const { selectedService } = useServiceState();
 
@@ -48,6 +49,8 @@ function ProductsTable() {
         name={findProperty('product_name')}
         owner={product.owner}
         imageURL={findProperty('image_url')}
+        editFn={editFn}
+        properties={product.properties}
       />
     );
   });
@@ -62,5 +65,9 @@ function ProductsTable() {
     </div>
   );
 }
+
+ProductsTable.propTypes = {
+  editFn: PropTypes.func.isRequired
+};
 
 export default ProductsTable;
