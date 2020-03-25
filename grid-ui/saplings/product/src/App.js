@@ -22,7 +22,9 @@ import {
   faCaretDown,
   faCheck,
   faPenSquare,
-  faPlus
+  faPlus,
+  faTimes,
+  faTrashAlt
 } from '@fortawesome/free-solid-svg-icons';
 
 import { ServiceProvider } from './state/service-context';
@@ -32,7 +34,7 @@ import { AddProductForm } from './components/AddProductForm';
 import { EditProductForm } from './components/EditProductForm';
 import './App.scss';
 
-library.add(faCaretUp, faCaretDown, faCheck, faPenSquare);
+library.add(faCaretUp, faCaretDown, faCheck, faPenSquare, faPlus, faTimes, faTrashAlt);
 
 function App() {
   const initialFormState = {

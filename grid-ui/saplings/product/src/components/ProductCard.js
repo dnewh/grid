@@ -25,11 +25,10 @@ function ProductCard(props) {
 
   return (
     <div className="product-card">
-      <button
-        type="button"
-        className="product-card-edit-button"
-        onClick={() => editFn(properties)}
-      >
+      <button type="button" className="product-card-delete-button">
+        <FontAwesomeIcon className="icon" icon="trash-alt" />
+      </button>
+      <button type="button" className="product-card-edit-button">
         <FontAwesomeIcon className="icon" icon="pen-square" />
       </button>
       <div className="product-card-content">
