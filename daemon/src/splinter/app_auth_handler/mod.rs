@@ -26,12 +26,12 @@ use splinter::{
     events::{Igniter, ParseBytes, ParseError, WebSocketClient, WebSocketError, WsResponse},
 };
 
-use crate::database::ConnectionPool;
 use crate::event::{db_handler::DatabaseEventHandler, EventProcessor};
 use crate::splinter::{
     app_auth_handler::{error::AppAuthHandlerError, node::get_node_id, sabre::setup_grid},
     event::ScabbardEventConnectionFactory,
 };
+use grid_sdk::database::ConnectionPool;
 
 /// default value if the client should attempt to reconnet if ws connection is lost
 const RECONNECT: bool = true;
@@ -56,10 +56,11 @@ impl ParseBytes<AdminEvent> for AdminEvent {
     }
 }
 
+#[cfg(feature = "postgres")]
 pub fn run(
     splinterd_url: String,
     event_connection_factory: ScabbardEventConnectionFactory,
-    connection_pool: ConnectionPool,
+    connection_pool: ConnectionPool<diesel::pg::PgConnection>,
     igniter: Igniter,
     scabbard_admin_key: String,
 ) -> Result<(), AppAuthHandlerError> {
@@ -105,10 +106,11 @@ pub fn run(
     igniter.start_ws(&ws).map_err(AppAuthHandlerError::from)
 }
 
+#[cfg(feature = "postgres")]
 fn process_admin_event(
     event: AdminEvent,
     event_connection_factory: &ScabbardEventConnectionFactory,
-    connection_pool: &ConnectionPool,
+    connection_pool: &ConnectionPool<diesel::pg::PgConnection>,
     node_id: &str,
     scabbard_admin_key: &str,
     splinterd_url: &str,
