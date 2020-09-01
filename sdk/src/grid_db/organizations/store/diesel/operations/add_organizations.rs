@@ -65,3 +65,42 @@ impl<'a> OrganizationStoreAddOrganizationsOperation
         Ok(())
     }
 }
+
+#[cfg(feature = "sqlite")]
+impl<'a> OrganizationStoreAddOrganizationsOperation
+    for OrganizationStoreOperations<'a, diesel::sqlite::SqliteConnection>
+{
+    fn add_organizations(
+        &self,
+        orgs: Vec<NewOrganizationModel>,
+    ) -> Result<(), OrganizationStoreError> {
+        for org in orgs {
+            let duplicate_org = organization::table
+                .filter(organization::org_id.eq(&org.org_id))
+                .first::<OrganizationModel>(self.conn)
+                .map(Some)
+                .or_else(|err| if err == NotFound { Ok(None) } else { Err(err) })
+                .map_err(|err| OrganizationStoreError::QueryError {
+                    context: "Failed check for existing organization".to_string(),
+                    source: Box::new(err),
+                })?;
+            if duplicate_org.is_some() {
+                return Err(OrganizationStoreError::DuplicateError {
+                    context: "Organization already exists".to_string(),
+                    source: None,
+                });
+            }
+
+            insert_into(organization::table)
+                .values(org)
+                .execute(self.conn)
+                .map(|_| ())
+                .map_err(|err| OrganizationStoreError::OperationError {
+                    context: "Failed to add organization".to_string(),
+                    source: Some(Box::new(err)),
+                })?;
+        }
+
+        Ok(())
+    }
+}
