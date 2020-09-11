@@ -16,10 +16,15 @@
 //! agents, commits, schemas, locations, products, and Track and Trace
 //! data.
 
+pub mod agents;
 pub mod commits;
 pub mod organizations;
 
 pub mod migrations;
+
+#[cfg(feature = "diesel")]
+pub use agents::store::diesel::DieselAgentStore;
+pub use agents::store::AgentStore;
 
 #[cfg(feature = "diesel")]
 pub use commits::store::diesel::DieselCommitStore;
