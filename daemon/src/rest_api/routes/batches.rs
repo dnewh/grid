@@ -22,6 +22,9 @@ use crate::rest_api::error::RestApiResponseError;
 use crate::rest_api::{AcceptServiceIdParam, AppState, QueryServiceId};
 use crate::submitter::{BatchStatusResponse, BatchStatuses, SubmitBatches, DEFAULT_TIME_OUT};
 
+pub const BATCHES_MIN_VERSION: u32 = 1;
+pub const BATCHES_MAX_VERSION: u32 = u32::MAX;
+
 pub async fn submit_batches(
     req: HttpRequest,
     body: web::Bytes,
