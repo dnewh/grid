@@ -29,6 +29,7 @@ export function get(url) {
   return new Promise(resolve => {
     const request = new XMLHttpRequest();
     request.open('GET', url, true);
+    request.setRequestHeader('GridProtocolVersion', '0.1');
     request.timeout = 5000;
 
     request.onload = () => {

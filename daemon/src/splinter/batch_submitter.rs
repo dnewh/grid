@@ -1,4 +1,3 @@
-/*
  * Copyright 2020 Cargill Incorporated
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -83,6 +82,7 @@ impl BatchSubmitter for SplinterBatchSubmitter {
         let client = reqwest::Client::new();
         client
             .post(&url)
+            .header("GridProtocolVersion", "0.1")
             .header("Content-Type", "octet-stream")
             .body(batch_list_bytes)
             .send()

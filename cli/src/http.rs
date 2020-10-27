@@ -40,6 +40,7 @@ pub fn submit_batches(
     debug!("url {}", final_url);
     let batch_link = client
         .post(&final_url)
+        .header("GridProtocolVersion", "0.1")
         .body(bytes)
         .send()?
         .json::<BatchStatusLink>()?;
