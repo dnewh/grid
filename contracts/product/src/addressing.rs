@@ -19,6 +19,7 @@ const GRID_NAMESPACE: &str = "621dee"; // Grid prefix
 pub const PIKE_NAMESPACE: &str = "cad11d";
 pub const PIKE_AGENT_NAMESPACE: &str = "00";
 pub const PIKE_ORG_NAMESPACE: &str = "01";
+pub const PIKE_ROLE_NAMESPACE: &str = "02";
 
 pub fn get_product_prefix() -> String {
     GRID_NAMESPACE.to_string()
@@ -48,6 +49,14 @@ pub fn compute_org_address(identifier: &str) -> String {
     sha.input(identifier.as_bytes());
 
     String::from(PIKE_NAMESPACE) + PIKE_ORG_NAMESPACE + &sha.result_str()[..62]
+}
+
+/// Computes the address a Pike Role is stored at based on its identifier
+pub fn compute_role_address(identifier: &str) -> String {
+    let mut sha = Sha512::new();
+    sha.input(identifier.as_bytes());
+
+    String::from(PIKE_NAMESPACE) + PIKE_ROLE_NAMESPACE + &sha.result_str()[..62]
 }
 
 pub fn compute_schema_address(name: &str) -> String {

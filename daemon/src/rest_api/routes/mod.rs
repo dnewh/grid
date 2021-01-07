@@ -19,6 +19,7 @@ use grid_sdk::{
     locations::{DieselLocationStore, LocationStore},
     organizations::{DieselOrganizationStore, OrganizationStore},
     products::{DieselProductStore, ProductStore},
+    roles::{DieselRoleStore, RoleStore},
     schemas::{DieselSchemaStore, SchemaStore},
     track_and_trace::{DieselTrackAndTraceStore, TrackAndTraceStore},
 };
@@ -34,6 +35,8 @@ mod organizations;
 mod products;
 #[cfg(feature = "track-and-trace")]
 mod records;
+#[cfg(feature = "pike")]
+mod roles;
 #[cfg(feature = "schema")]
 mod schemas;
 
@@ -48,6 +51,8 @@ pub use organizations::*;
 pub use products::*;
 #[cfg(feature = "track-and-trace")]
 pub use records::*;
+#[cfg(feature = "pike")]
+pub use roles::*;
 #[cfg(feature = "schema")]
 pub use schemas::*;
 
@@ -61,6 +66,7 @@ pub struct DbExecutor {
     location_store: Arc<dyn LocationStore>,
     organization_store: Arc<dyn OrganizationStore>,
     product_store: Arc<dyn ProductStore>,
+    role_store: Arc<dyn RoleStore>,
     schema_store: Arc<dyn SchemaStore>,
     tnt_store: Arc<dyn TrackAndTraceStore>,
 }
@@ -76,6 +82,7 @@ impl DbExecutor {
         let organization_store =
             Arc::new(DieselOrganizationStore::new(connection_pool.pool.clone()));
         let product_store = Arc::new(DieselProductStore::new(connection_pool.pool.clone()));
+        let role_store = Arc::new(DieselRoleStore::new(connection_pool.pool.clone()));
         let schema_store = Arc::new(DieselSchemaStore::new(connection_pool.pool.clone()));
         let tnt_store = Arc::new(DieselTrackAndTraceStore::new(connection_pool.pool));
 
@@ -84,6 +91,7 @@ impl DbExecutor {
             location_store,
             organization_store,
             product_store,
+            role_store,
             schema_store,
             tnt_store,
         }
@@ -97,6 +105,7 @@ impl DbExecutor {
         let organization_store =
             Arc::new(DieselOrganizationStore::new(connection_pool.pool.clone()));
         let product_store = Arc::new(DieselProductStore::new(connection_pool.pool.clone()));
+        let role_store = Arc::new(DieselRoleStore::new(connection_pool.pool.clone()));
         let schema_store = Arc::new(DieselSchemaStore::new(connection_pool.pool.clone()));
         let tnt_store = Arc::new(DieselTrackAndTraceStore::new(connection_pool.pool));
 
@@ -105,6 +114,7 @@ impl DbExecutor {
             location_store,
             organization_store,
             product_store,
+            role_store,
             schema_store,
             tnt_store,
         }

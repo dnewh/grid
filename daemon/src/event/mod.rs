@@ -31,6 +31,8 @@ const PIKE_NAMESPACE: &str = "cad11d";
 const PIKE_AGENT: &str = "cad11d00";
 #[cfg(feature = "pike")]
 const PIKE_ORG: &str = "cad11d01";
+#[cfg(feature = "pike")]
+const PIKE_ROLE: &str = "cad11d02";
 
 const GRID_NAMESPACE: &str = "621dee";
 #[cfg(feature = "schema")]
