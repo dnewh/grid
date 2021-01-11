@@ -603,6 +603,71 @@ impl IntoBytes for AlternateID {
 impl IntoProto<protos::pike_state::AlternateID> for AlternateID {}
 impl IntoNative<AlternateID> for protos::pike_state::AlternateID {}
 
+#[derive(Debug)]
+pub enum AlternateIDBuildError {
+    MissingField(String),
+}
+
+impl StdError for AlternateIDBuildError {
+    fn description(&self) -> &str {
+        match *self {
+            AlternateIDBuildError::MissingField(ref msg) => msg,
+        }
+    }
+
+    fn cause(&self) -> Option<&dyn StdError> {
+        match *self {
+            AlternateIDBuildError::MissingField(_) => None,
+        }
+    }
+}
+
+impl std::fmt::Display for AlternateIDBuildError {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        match *self {
+            AlternateIDBuildError::MissingField(ref s) => write!(f, "MissingField: {}", s),
+        }
+    }
+}
+
+/// Builder used to create a AlternateID
+#[derive(Default, Clone)]
+pub struct AlternateIDBuilder {
+    pub id_type: Option<String>,
+    pub id: Option<String>,
+}
+
+impl AlternateIDBuilder {
+    pub fn new() -> Self {
+        AlternateIDBuilder::default()
+    }
+
+    pub fn with_id_type(mut self, id_type: String) -> AlternateIDBuilder {
+        self.id_type = Some(id_type);
+        self
+    }
+
+    pub fn with_id(mut self, id: String) -> AlternateIDBuilder {
+        self.id = Some(id);
+        self
+    }
+
+    pub fn build(self) -> Result<AlternateID, AlternateIDBuildError> {
+        let id_type = self.id_type.ok_or_else(|| {
+            AlternateIDBuildError::MissingField("'id_type' field is required".to_string())
+        })?;
+
+        let id = self.id.ok_or_else(|| {
+            AlternateIDBuildError::MissingField("'id' field is required".to_string())
+        })?;
+
+        Ok(AlternateID {
+            id_type,
+            id,
+        })
+    }
+}
+
 /// Native implementation of Agent
 #[derive(Debug, Clone, PartialEq)]
 pub struct Agent {
