@@ -40,7 +40,7 @@ use grid_sdk::{
 
 use grid_sdk::protos::FromBytes;
 
-use crate::{addressing::GRID_NAMESPACE, state::LocationState};
+use crate::{addressing::GRID_NAMESPACE, state::LocationState, permissions::{permission_to_perm_string, Permission}};
 
 #[cfg(target_arch = "wasm32")]
 fn apply(
@@ -179,15 +179,24 @@ fn create_location(
     }
 
     // 6) check if agent has can_create_location permission
-    if !perm_checker
-        .has_permission(agent.public_key(), "can_create_location")
-        .map_err(|err| ApplyError::InternalError(format!("Failed to check permissions: {}", err)))?
-    {
-        return Err(ApplyError::InvalidTransaction(format!(
-            "Agent {} does not have permission to create locations",
-            agent.public_key()
-        )));
-    }
+    // if !perm_checker
+    //     .has_permission(agent.public_key(), "can_create_location")
+    //     .map_err(|err| ApplyError::InternalError(format!("Failed to check permissions: {}", err)))?
+    // {
+    //     return Err(ApplyError::InvalidTransaction(format!(
+    //         "Agent {} does not have permission to create locations",
+    //         agent.public_key()
+    //     )));
+    // }
+    perm_checker
+        .has_permission(
+            signer,
+            &permission_to_perm_string(Permission::CanCreateLocation),
+            payload.owner(),
+        )
+        .map_err(|err| {
+            ApplyError::InternalError(format!("Failed to check permissions: {}", err))
+        })?;
 
     // 7) check if organization has gln in gs1_company_prefix metadata
     let mut has_gs1_prefix = false;
@@ -277,45 +286,15 @@ fn update_location(
         )));
     };
 
-    // 2) check if agent exists
-    let agent = if let Some(agent) = state.get_agent(signer)? {
-        agent
-    } else {
-        return Err(ApplyError::InvalidTransaction(format!(
-            "Agent {} is not registered in Pike",
-            signer
-        )));
-    };
-
-    // 3) check if organization exists
-    let organization = if let Some(org) = state.get_organization(location.owner())? {
-        org
-    } else {
-        return Err(ApplyError::InvalidTransaction(format!(
-            "Organization {} is not registered with Pike",
-            location.owner()
-        )));
-    };
-
-    // 4) check if agent belongs to organization
-    if agent.org_id() != organization.org_id() {
-        return Err(ApplyError::InvalidTransaction(format!(
-            "Agent with public key {} is not registered to {}",
-            agent.public_key(),
-            organization.org_id()
-        )));
-    }
-
-    // 5) check if agent has can_update_location permission
-    if !perm_checker
-        .has_permission(agent.public_key(), "can_update_location")
-        .map_err(|err| ApplyError::InternalError(format!("Failed to check permissions: {}", err)))?
-    {
-        return Err(ApplyError::InvalidTransaction(format!(
-            "Agent {} does not have permission to update locations",
-            agent.public_key()
-        )));
-    }
+    perm_checker
+        .has_permission(
+            signer,
+            &permission_to_perm_string(Permission::CanUpdateLocation),
+            location.owner(),
+        )
+        .map_err(|err| {
+            ApplyError::InternalError(format!("Failed to check permissions: {}", err))
+        })?;
 
     // 6) check if gs1 schema exists
     let schema = if let Some(schema) = state.get_schema("gs1_location")? {
@@ -388,45 +367,15 @@ fn delete_location(
         )));
     };
 
-    // 2) check if agent exists
-    let agent = if let Some(agent) = state.get_agent(signer)? {
-        agent
-    } else {
-        return Err(ApplyError::InvalidTransaction(format!(
-            "Agent {} is not registered in Pike",
-            signer
-        )));
-    };
-
-    // 3) check if organization exists
-    let organization = if let Some(org) = state.get_organization(location.owner())? {
-        org
-    } else {
-        return Err(ApplyError::InvalidTransaction(format!(
-            "Organization {} is not registered with Pike",
-            location.owner()
-        )));
-    };
-
-    // 4) check if agent belongs to organization
-    if agent.org_id() != organization.org_id() {
-        return Err(ApplyError::InvalidTransaction(format!(
-            "Agent with public key {} is not registered to {}",
-            agent.public_key(),
-            organization.org_id()
-        )));
-    }
-
-    // 5) check if agent has can_delete_location permission
-    if !perm_checker
-        .has_permission(agent.public_key(), "can_delete_location")
-        .map_err(|err| ApplyError::InternalError(format!("Failed to check permissions: {}", err)))?
-    {
-        return Err(ApplyError::InvalidTransaction(format!(
-            "Agent {} does not have permission to delete locations",
-            agent.public_key()
-        )));
-    }
+    perm_checker
+        .has_permission(
+            signer,
+            &permission_to_perm_string(Permission::CanDeleteLocation),
+            location.owner(),
+        )
+        .map_err(|err| {
+            ApplyError::InternalError(format!("Failed to check permissions: {}", err))
+        })?;
 
     state.remove_location(payload.location_id())
 }
@@ -499,7 +448,7 @@ mod tests {
             let prefix_org = OrganizationBuilder::new()
                 .with_org_id("prefix_org".to_string())
                 .with_name("test_org_name".to_string())
-                .with_address("test_org_address".to_string())
+                .with_locations(vec![])
                 .with_metadata(vec![key_value.clone()])
                 .build()
                 .unwrap();
@@ -516,7 +465,7 @@ mod tests {
             let no_prefix_org = OrganizationBuilder::new()
                 .with_org_id("no_prefix_org".to_string())
                 .with_name("test_org_name".to_string())
-                .with_address("test_org_address".to_string())
+                .with_locations(vec!["test".to_string()])
                 .build()
                 .unwrap();
             let no_prefix_org_list = OrganizationListBuilder::new()

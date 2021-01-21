@@ -34,6 +34,7 @@ cfg_if! {
 
 mod addressing;
 pub mod handler;
+pub mod permissions;
 mod payload;
 mod state;
 mod validation;

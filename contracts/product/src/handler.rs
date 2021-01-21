@@ -39,6 +39,7 @@ use crate::addressing::*;
 use crate::payload::validate_payload;
 use crate::state::ProductState;
 use crate::validation::validate_gtin;
+use crate::permissions::{permission_to_perm_string, Permission};
 
 #[cfg(target_arch = "wasm32")]
 // Sabre apply must return a bool
@@ -90,20 +91,6 @@ impl ProductTransactionHandler {
         let product_namespace = payload.product_namespace();
         let properties = payload.properties();
 
-        // Check that the agent submitting the transactions exists in state
-        let agent = match state.get_agent(signer)? {
-            Some(agent) => agent,
-            None => {
-                return Err(ApplyError::InvalidTransaction(format!(
-                    "The signing Agent does not exist: {}",
-                    signer
-                )));
-            }
-        };
-
-        // Check signing agent's permission
-        check_permission(perm_checker, signer, "can_create_product")?;
-
         // Check if product exists in state
         if state.get_product(product_id)?.is_some() {
             return Err(ApplyError::InvalidTransaction(format!(
@@ -135,14 +122,15 @@ impl ProductTransactionHandler {
             }
         };
 
-        // Check that the agent belongs to organization
-        if agent.org_id() != org.org_id() {
-            return Err(ApplyError::InvalidTransaction(format!(
-                "The signing Agent {} is not associated with organization {}",
+        perm_checker
+            .has_permission(
                 signer,
-                org.org_id()
-            )));
-        }
+                &permission_to_perm_string(Permission::CanCreateProduct),
+                owner,
+            )
+            .map_err(|err| {
+                ApplyError::InternalError(format!("Failed to check permissions: {}", err))
+            })?;
 
         /* Check if the agents organization contain GS1 Company Prefix key in its metadata
         (gs1_company_prefixes), and the prefix must match the company prefix in the product_id */
@@ -235,20 +223,6 @@ impl ProductTransactionHandler {
         let product_namespace = payload.product_namespace();
         let properties = payload.properties();
 
-        // Check that the agent submitting the transactions exists in state
-        let agent = match state.get_agent(signer)? {
-            Some(agent) => agent,
-            None => {
-                return Err(ApplyError::InvalidTransaction(format!(
-                    "The signing Agent does not exist: {}",
-                    signer
-                )));
-            }
-        };
-
-        // Check signing agent's permission
-        check_permission(perm_checker, signer, "can_update_product")?;
-
         // Check if the product namespace is a GS1 product
         if product_namespace != &ProductNamespace::GS1 {
             return Err(ApplyError::InvalidTransaction(
@@ -266,12 +240,15 @@ impl ProductTransactionHandler {
             Err(err) => Err(err),
         }?;
 
-        // Check if the agent updating the product is part of the organization associated with the product
-        if product.owner() != agent.org_id() {
-            return Err(ApplyError::InvalidTransaction(
-                "Invalid organization for the agent submitting this transaction".to_string(),
-            ));
-        }
+        perm_checker
+            .has_permission(
+                signer,
+                &permission_to_perm_string(Permission::CanUpdateProduct),
+                product.owner(),
+            )
+            .map_err(|err| {
+                ApplyError::InternalError(format!("Failed to check permissions: {}", err))
+            })?;
 
         // Check if product product_id is a valid gtin
         if let Err(e) = validate_gtin(product_id) {
@@ -344,20 +321,6 @@ impl ProductTransactionHandler {
         let product_id = payload.product_id();
         let product_namespace = payload.product_namespace();
 
-        // Check that the agent submitting the transactions exists in state
-        let agent = match state.get_agent(signer)? {
-            Some(agent) => agent,
-            None => {
-                return Err(ApplyError::InvalidTransaction(format!(
-                    "The signing Agent does not exist: {}",
-                    signer
-                )));
-            }
-        };
-
-        // Check signing agent's permission
-        check_permission(perm_checker, signer, "can_delete_product")?;
-
         // Check if the product namespace is a GS1 product
         if product_namespace != &ProductNamespace::GS1 {
             return Err(ApplyError::InvalidTransaction(
@@ -380,12 +343,15 @@ impl ProductTransactionHandler {
             return Err(ApplyError::InvalidTransaction(e.to_string()));
         }
 
-        // Check that the owner of the products organization is the same as the agent trying to delete the product
-        if product.owner() != agent.org_id() {
-            return Err(ApplyError::InvalidTransaction(
-                "Invalid organization for the agent submitting this transaction".to_string(),
-            ));
-        }
+        perm_checker
+            .has_permission(
+                signer,
+                &permission_to_perm_string(Permission::CanDeleteProduct),
+                product.owner(),
+            )
+            .map_err(|err| {
+                ApplyError::InternalError(format!("Failed to check permissions: {}", err))
+            })?;
 
         // Delete the product
         state.remove_product(product_id)?;
@@ -439,21 +405,6 @@ impl TransactionHandler for ProductTransactionHandler {
             }
         }
         Ok(())
-    }
-}
-
-fn check_permission(
-    perm_checker: &PermissionChecker,
-    signer: &str,
-    permission: &str,
-) -> Result<(), ApplyError> {
-    match perm_checker.has_permission(signer, permission) {
-        Ok(true) => Ok(()),
-        Ok(false) => Err(ApplyError::InvalidTransaction(format!(
-            "The signer does not have the {} permission: {}.",
-            permission, signer,
-        ))),
-        Err(e) => Err(ApplyError::InvalidTransaction(format!("{}", e))),
     }
 }
 
@@ -593,7 +544,7 @@ mod tests {
             let org = builder
                 .with_org_id(org_id.to_string())
                 .with_name("test_org_name".to_string())
-                .with_address("test_org_address".to_string())
+                .with_locations(vec!["test".to_string()])
                 .with_metadata(vec![key_value.clone()])
                 .build()
                 .unwrap();
@@ -613,7 +564,7 @@ mod tests {
             let org = builder
                 .with_org_id(org_id.to_string())
                 .with_name("test_org_name".to_string())
-                .with_address("test_org_address".to_string())
+                .with_locations(vec!["test".to_string()])
                 .build()
                 .unwrap();
 

@@ -1,4 +1,4 @@
-// Copyright 2018-2020 Cargill Incorporated
+// Copyright 2021 Cargill Incorporated
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,17 +12,16 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-table! {
-    role (id) {
-        id -> Int8,
-        org_id -> Varchar,
-        name -> Varchar,
-        description -> Varchar,
-        permissions -> Binary,
-        allowed_orgs -> Binary,
-        inherit_from -> Binary,
-        start_commit_num -> Int8,
-        end_commit_num -> Int8,
-        service_id -> Nullable<Text>,
+pub enum Permission {
+    CanCreateSchema,
+    CanUpdateSchema,
+    CanDeleteSchema,
+}
+
+pub fn permission_to_perm_string(permission: Permission) -> String {
+    match permission {
+        Permission::CanCreateSchema => String::from("schema::can-create-schema"),
+        Permission::CanUpdateSchema => String::from("schema::can-update-schema"),
+        Permission::CanDeleteSchema => String::from("schema::can-delete-schema"),
     }
 }

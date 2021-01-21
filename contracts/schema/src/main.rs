@@ -33,6 +33,7 @@ cfg_if! {
 }
 
 pub mod handler;
+pub mod permissions;
 mod payload;
 mod state;
 

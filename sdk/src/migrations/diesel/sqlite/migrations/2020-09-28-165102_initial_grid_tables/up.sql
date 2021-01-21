@@ -72,20 +72,25 @@ CREATE TABLE grid_circuit_proposal_vote_record (
 );
 
 CREATE TABLE agent (
-    id INTEGER PRIMARY KEY,
+    id BIGSERIAL PRIMARY KEY,
     public_key VARCHAR(70) NOT NULL,
     org_id VARCHAR(256) NOT NULL,
     active BOOLEAN NOT NULL,
+    roles BYTEA NOT NULL,
     metadata BYTEA NOT NULL,
+    service_id TEXT,
     start_commit_num BIGINT NOT NULL,
-    end_commit_num BIGINT NOT NULL,
-    service_id TEXT
+    end_commit_num BIGINT NOT NULL
 );
 
 CREATE TABLE role (
-    id INTEGER PRIMARY KEY,
-    public_key VARCHAR(70) NOT NULL,
-    role_name TEXT NOT NULL,
+    id BIGSERIAL PRIMARY KEY,
+    org_id VARCHAR(256) NOT NULL,
+    name VARCHAR(256) NOT NULL,
+    description VARCHAR(256) NOT NULL,
+    permissions BYTEA NOT NULL,
+    allowed_orgs BYTEA NOT NULL,
+    inherit_from BYTEA NOT NULL,
     service_id TEXT,
     start_commit_num BIGINT NOT NULL,
     end_commit_num BIGINT NOT NULL
@@ -95,8 +100,26 @@ CREATE TABLE organization (
     id INTEGER PRIMARY KEY,
     org_id VARCHAR(256) NOT NULL,
     name VARCHAR(256) NOT NULL,
-    address VARCHAR(256) NOT NULL,
     metadata BYTEA NOT NULL,
+    service_id TEXT,
+    start_commit_num BIGINT NOT NULL,
+    end_commit_num BIGINT NOT NULL
+);
+
+CREATE TABLE alternate_identifier (
+    id BIGSERIAL PRIMARY KEY,
+    alternate_id VARCHAR(256) NOT NULL,
+    id_type VARCHAR(256) NOT NULL,
+    org_id VARCHAR(256) NOT NULL,
+    service_id TEXT,
+    start_commit_num BIGINT NOT NULL,
+    end_commit_num BIGINT NOT NULL
+);
+
+CREATE TABLE org_location (
+    id BIGSERIAL PRIMARY KEY,
+    location VARCHAR(256) NOT NULL,
+    org_id VARCHAR(256) NOT NULL,
     service_id TEXT,
     start_commit_num BIGINT NOT NULL,
     end_commit_num BIGINT NOT NULL

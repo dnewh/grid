@@ -41,7 +41,7 @@ use grid_sdk::protos::pike_payload::{
 use grid_sdk::protos::pike_state::{Agent, AgentList, Organization, OrganizationList};
 use grid_sdk::protos::{FromBytes, IntoBytes};
 
-use permissions::{permission_to_perm_string, Permission};
+use crate::permissions::{permission_to_perm_string, Permission};
 
 pub struct PikeTransactionHandler {
     family_name: String,
@@ -55,7 +55,7 @@ fn compute_address(name: &str, resource: Resource) -> String {
     let mut sha = Sha512::new();
     sha.input(name.as_bytes());
 
-    String::from(NAMESPACE) + &resource_to_byte(resource) + &sha.result_str()[..62].to_string()
+    String::from(NAMESPACE) + &resource_to_byte(resource) + &sha.result_str()[..60].to_string()
 }
 
 pub struct PikeState<'a> {
@@ -332,13 +332,13 @@ impl TransactionHandler for PikeTransactionHandler {
         info!("Pike Payload {:?}", payload.get_action(),);
 
         match payload.action {
-            Action::CREATE_AGENT => create_agent(payload.get_create_agent(), signer, &mut state),
+            Action::CREATE_AGENT => create_agent(payload.get_create_agent(), &mut state),
             Action::UPDATE_AGENT => update_agent(payload.get_update_agent(), signer, &mut state),
             Action::CREATE_ORGANIZATION => {
                 create_org(payload.get_create_organization(), signer, &mut state)
             }
             Action::UPDATE_ORGANIZATION => {
-                update_org(payload.get_update_organization(), signer, &mut state)
+                update_org(payload.get_update_organization(), &mut state)
             }
             Action::CREATE_ROLE => create_role(
                 payload.get_create_role(),
@@ -438,7 +438,6 @@ fn create_role(
 
 fn create_agent(
     payload: &CreateAgentAction,
-    signer: &str,
     state: &mut PikeState,
 ) -> Result<(), ApplyError> {
     if payload.get_public_key().is_empty() {
@@ -450,9 +449,6 @@ fn create_agent(
             "Organization ID required".into(),
         ));
     }
-
-    // verify the signer of the transaction is authorized to create agent
-    is_admin(signer, payload.get_org_id(), state)?;
 
     // Check if agent already exists
     match state.get_agent(payload.get_public_key()) {
@@ -501,8 +497,6 @@ fn update_agent(
             "Organization ID required".into(),
         ));
     }
-    // verify the signer of the transaction is authorized to update agent
-    is_admin(signer, payload.get_org_id(), state)?;
 
     // make sure agent already exists
     let mut agent = match state.get_agent(payload.get_public_key()) {
@@ -654,7 +648,6 @@ fn create_org(
 
 fn update_org(
     payload: &UpdateOrganizationAction,
-    signer: &str,
     state: &mut PikeState,
 ) -> Result<(), ApplyError> {
     if payload.get_id().is_empty() {
@@ -662,9 +655,6 @@ fn update_org(
             "Unique organization ID required".into(),
         ));
     }
-
-    // verify the signer of the transaction is authorized to update organization
-    is_admin(signer, payload.get_id(), state)?;
 
     // Make sure the organization already exists
     let mut organization = match state.get_organization(payload.get_id()) {

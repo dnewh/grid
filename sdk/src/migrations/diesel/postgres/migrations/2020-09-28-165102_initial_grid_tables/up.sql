@@ -76,14 +76,19 @@ CREATE TABLE agent (
     public_key VARCHAR(70) NOT NULL,
     org_id VARCHAR(256) NOT NULL,
     active BOOLEAN NOT NULL,
+    roles BYTEA NOT NULL,
     metadata BYTEA NOT NULL,
     service_id TEXT
 ) INHERITS (chain_record);
 
 CREATE TABLE role (
     id BIGSERIAL PRIMARY KEY,
-    public_key VARCHAR(70) NOT NULL,
-    role_name TEXT NOT NULL,
+    org_id VARCHAR(256) NOT NULL,
+    name VARCHAR(256) NOT NULL,
+    description VARCHAR(256) NOT NULL,
+    permissions BYTEA NOT NULL,
+    allowed_orgs BYTEA NOT NULL,
+    inherit_from BYTEA NOT NULL,
     service_id TEXT
 ) INHERITS (chain_record);
 
@@ -91,8 +96,22 @@ CREATE TABLE organization (
     id BIGSERIAL CONSTRAINT pk_organization PRIMARY KEY,
     org_id VARCHAR(256) NOT NULL,
     name VARCHAR(256) NOT NULL,
-    address VARCHAR(256) NOT NULL,
     metadata BYTEA NOT NULL,
+    service_id TEXT
+) INHERITS (chain_record);
+
+CREATE TABLE alternate_identifier (
+    id BIGSERIAL PRIMARY KEY,
+    alternate_id VARCHAR(256) NOT NULL,
+    id_type VARCHAR(256) NOT NULL,
+    org_id VARCHAR(256) NOT NULL,
+    service_id TEXT
+) INHERITS (chain_record);
+
+CREATE TABLE org_location (
+    id BIGSERIAL PRIMARY KEY,
+    location VARCHAR(256) NOT NULL,
+    org_id VARCHAR(256) NOT NULL,
     service_id TEXT
 ) INHERITS (chain_record);
 

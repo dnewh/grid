@@ -469,6 +469,18 @@ fn run() -> Result<(), CliError> {
                                 .help("List of roles to inherit permissions from"),
                         )
                         .arg(
+                            Arg::with_name("active")
+                                .long("active")
+                                .conflicts_with("inactive")
+                                .help("Set role as active"),
+                        )
+                        .arg(
+                            Arg::with_name("inactive")
+                                .long("inactive")
+                                .conflicts_with("active")
+                                .help("Set role as inactive"),
+                        )
+                        .arg(
                             Arg::with_name("key")
                                 .long("key")
                                 .short("k")
@@ -481,24 +493,23 @@ fn run() -> Result<(), CliError> {
                                 .takes_value(true)
                                 .help("How long to wait for transaction to be committed")
                         ),
-                ),
-                subcommand(
+                )
+                .subcommand(
                     SubCommand::with_name("update")
                         .about("Update a Role")
                         .arg(
                             Arg::with_name("org_id")
-                                .takes_value(true)
                                 .required(true)
                                 .help("Unique ID for owning organization"),
                         )
                         .arg(
                             Arg::with_name("name")
-                                .takes_value(true)
                                 .required(true)
                                 .help("Name for the role"),
                         )
                         .arg(
                             Arg::with_name("description")
+                                .short("d")
                                 .takes_value(true)
                                 .required(false)
                                 .help("Description of the role"),
@@ -527,6 +538,18 @@ fn run() -> Result<(), CliError> {
                                 .multiple(true)
                                 .use_delimiter(true)
                                 .help("List of roles to inherit permissions from"),
+                        )
+                        .arg(
+                            Arg::with_name("active")
+                                .long("active")
+                                .conflicts_with("inactive")
+                                .help("Set role as active"),
+                        )
+                        .arg(
+                            Arg::with_name("inactive")
+                                .long("inactive")
+                                .conflicts_with("active")
+                                .help("Set role as inactive"),
                         )
                         .arg(
                             Arg::with_name("key")
@@ -1172,6 +1195,14 @@ fn run() -> Result<(), CliError> {
 
                     let wait = value_t!(m, "wait", u64).unwrap_or(0);
 
+                    let active = if m.is_present("inactive") {
+                        false
+                    } else if m.is_present("active") {
+                        true
+                    } else {
+                        false
+                    };
+
                     let create_role = CreateRoleActionBuilder::new()
                         .with_org_id(m.value_of("org_id").unwrap().into())
                         .with_name(m.value_of("name").unwrap().into())
@@ -1194,6 +1225,7 @@ fn run() -> Result<(), CliError> {
                                 .map(String::from)
                                 .collect::<Vec<String>>(),
                         )
+                        .with_active(active)
                         .build()
                         .map_err(|err| CliError::UserError(format!("{}", err)))?;
 
@@ -1207,6 +1239,14 @@ fn run() -> Result<(), CliError> {
                         .or_else(|| env::var(GRID_DAEMON_KEY).ok());
 
                     let wait = value_t!(m, "wait", u64).unwrap_or(0);
+
+                    let active = if m.is_present("inactive") {
+                        false
+                    } else if m.is_present("active") {
+                        true
+                    } else {
+                        false
+                    };
 
                     let update_role = UpdateRoleActionBuilder::new()
                         .with_org_id(m.value_of("org_id").unwrap().into())
@@ -1230,6 +1270,7 @@ fn run() -> Result<(), CliError> {
                                 .map(String::from)
                                 .collect::<Vec<String>>(),
                         )
+                        .with_active(active)
                         .build()
                         .map_err(|err| CliError::UserError(format!("{}", err)))?;
 

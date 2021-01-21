@@ -90,7 +90,7 @@ use super::GRID_PRODUCT;
 use super::GRID_SCHEMA;
 use super::{CommitEvent, EventError, EventHandler, StateChange, IGNORED_NAMESPACES};
 #[cfg(feature = "pike")]
-use super::{PIKE_AGENT, PIKE_ORG, PIKE_ROLE};
+use super::{PIKE_NAMESPACE, PIKE_AGENT, PIKE_ORG, PIKE_ROLE};
 #[cfg(feature = "track-and-trace")]
 use super::{TRACK_AND_TRACE_PROPERTY, TRACK_AND_TRACE_PROPOSAL, TRACK_AND_TRACE_RECORD};
 
@@ -511,104 +511,111 @@ fn state_change_to_db_operation(
     match state_change {
         StateChange::Set { key, value } => match &key[0..8] {
             #[cfg(feature = "pike")]
-            PIKE_AGENT => {
-                let agents = AgentList::from_bytes(&value)
-                    .map_err(|err| EventError(format!("Failed to parse agent list {}", err)))?
-                    .agents()
-                    .iter()
-                    .map(|agent| Agent {
-                        public_key: agent.public_key().to_string(),
-                        org_id: agent.org_id().to_string(),
-                        active: *agent.active(),
-                        metadata: json!(agent.metadata().iter().fold(
-                            HashMap::new(),
-                            |mut acc, md| {
-                                acc.insert(md.key().to_string(), md.value().to_string());
-                                acc
-                            }
-                        ))
-                        .to_string()
-                        .into_bytes(),
-                        roles: agent.roles().join(",").into_bytes(),
-                        start_commit_num: commit_num,
-                        end_commit_num: MAX_COMMIT_NUM,
-                        service_id: service_id.cloned(),
-                    })
-                    .collect::<Vec<Agent>>();
-
-                Ok(Some(DbInsertOperation::Agents(agents)))
-            }
-            #[cfg(feature = "pike")]
-            PIKE_ORG => {
-                let orgs = OrganizationList::from_bytes(&value)
-                    .map_err(|err| {
-                        EventError(format!("Failed to parse organization list {}", err))
-                    })?
-                    .organizations()
-                    .iter()
-                    .map(|org| Organization {
-                        org_id: org.org_id().to_string(),
-                        name: org.name().to_string(),
-                        locations: org
-                            .locations()
+            PIKE_NAMESPACE => {
+                match &key[0..10] {
+                    PIKE_AGENT => {
+                        let agents = AgentList::from_bytes(&value)
+                            .map_err(|err| EventError(format!("Failed to parse agent list {}", err)))?
+                            .agents()
                             .iter()
-                            .map(|l| OrgLocation {
-                                location: l.to_string(),
-                                org_id: org.org_id().to_string(),
+                            .map(|agent| Agent {
+                                public_key: agent.public_key().to_string(),
+                                org_id: agent.org_id().to_string(),
+                                active: *agent.active(),
+                                metadata: json!(agent.metadata().iter().fold(
+                                    HashMap::new(),
+                                    |mut acc, md| {
+                                        acc.insert(md.key().to_string(), md.value().to_string());
+                                        acc
+                                    }
+                                ))
+                                .to_string()
+                                .into_bytes(),
+                                roles: agent.roles().join(",").into_bytes(),
                                 start_commit_num: commit_num,
                                 end_commit_num: MAX_COMMIT_NUM,
                                 service_id: service_id.cloned(),
                             })
-                            .collect(),
-                        alternate_ids: org
-                            .alternate_ids()
+                            .collect::<Vec<Agent>>();
+
+                        Ok(Some(DbInsertOperation::Agents(agents)))
+                    }
+                    PIKE_ORG => {
+                        let orgs = OrganizationList::from_bytes(&value)
+                            .map_err(|err| {
+                                EventError(format!("Failed to parse organization list {}", err))
+                            })?
+                            .organizations()
                             .iter()
-                            .map(|a| AltID {
-                                alternate_id: a.id().to_string(),
-                                id_type: a.id_type().to_string(),
+                            .map(|org| Organization {
                                 org_id: org.org_id().to_string(),
+                                name: org.name().to_string(),
+                                locations: org
+                                    .locations()
+                                    .iter()
+                                    .map(|l| OrgLocation {
+                                        location: l.to_string(),
+                                        org_id: org.org_id().to_string(),
+                                        start_commit_num: commit_num,
+                                        end_commit_num: MAX_COMMIT_NUM,
+                                        service_id: service_id.cloned(),
+                                    })
+                                    .collect(),
+                                alternate_ids: org
+                                    .alternate_ids()
+                                    .iter()
+                                    .map(|a| AltID {
+                                        alternate_id: a.id().to_string(),
+                                        id_type: a.id_type().to_string(),
+                                        org_id: org.org_id().to_string(),
+                                        start_commit_num: commit_num,
+                                        end_commit_num: MAX_COMMIT_NUM,
+                                        service_id: service_id.cloned(),
+                                    })
+                                    .collect(),
+                                metadata: json!(org.metadata().iter().fold(
+                                    HashMap::new(),
+                                    |mut acc, md| {
+                                        acc.insert(md.key().to_string(), md.value().to_string());
+                                        acc
+                                    }
+                                ))
+                                .to_string()
+                                .into_bytes(),
                                 start_commit_num: commit_num,
                                 end_commit_num: MAX_COMMIT_NUM,
                                 service_id: service_id.cloned(),
                             })
-                            .collect(),
-                        metadata: json!(org.metadata().iter().fold(
-                            HashMap::new(),
-                            |mut acc, md| {
-                                acc.insert(md.key().to_string(), md.value().to_string());
-                                acc
-                            }
-                        ))
-                        .to_string()
-                        .into_bytes(),
-                        start_commit_num: commit_num,
-                        end_commit_num: MAX_COMMIT_NUM,
-                        service_id: service_id.cloned(),
-                    })
-                    .collect::<Vec<Organization>>();
+                            .collect::<Vec<Organization>>();
 
-                Ok(Some(DbInsertOperation::Organizations(orgs)))
-            }
-            #[cfg(feature = "pike")]
-            PIKE_ROLE => {
-                let roles = RoleList::from_bytes(&value)
-                    .map_err(|err| EventError(format!("Failed to parse role list {}", err)))?
-                    .roles()
-                    .iter()
-                    .map(|role| Role {
-                        org_id: role.org_id().to_string(),
-                        name: role.name().to_string(),
-                        description: role.description().to_string(),
-                        permissions: role.permissions().join(",").into_bytes(),
-                        allowed_orgs: role.allowed_organizations().join(",").into_bytes(),
-                        inherit_from: role.inherit_from().join(",").into_bytes(),
-                        start_commit_num: commit_num,
-                        end_commit_num: MAX_COMMIT_NUM,
-                        service_id: service_id.cloned(),
-                    })
-                    .collect::<Vec<Role>>();
+                        Ok(Some(DbInsertOperation::Organizations(orgs)))
+                    }
+                    PIKE_ROLE => {
+                        let roles = RoleList::from_bytes(&value)
+                            .map_err(|err| EventError(format!("Failed to parse role list {}", err)))?
+                            .roles()
+                            .iter()
+                            .map(|role| Role {
+                                org_id: role.org_id().to_string(),
+                                name: role.name().to_string(),
+                                description: role.description().to_string(),
+                                permissions: role.permissions().join(",").into_bytes(),
+                                allowed_orgs: role.allowed_organizations().join(",").into_bytes(),
+                                inherit_from: role.inherit_from().join(",").into_bytes(),
+                                start_commit_num: commit_num,
+                                end_commit_num: MAX_COMMIT_NUM,
+                                service_id: service_id.cloned(),
+                            })
+                            .collect::<Vec<Role>>();
 
-                Ok(Some(DbInsertOperation::Roles(roles)))
+                        Ok(Some(DbInsertOperation::Roles(roles)))
+                    }
+                    _ => {
+                        debug!("It's getting here at least");
+                        debug!("received state change for unknown address: {}", key);
+                        Ok(None)
+                    }
+                }
             }
             #[cfg(feature = "schema")]
             GRID_SCHEMA => {
@@ -863,6 +870,8 @@ fn state_change_to_db_operation(
                     .iter()
                     .any(|namespace| key.starts_with(namespace));
                 if !ignore_state_change {
+                    #[cfg(feature = "pike")]
+                    debug!("why is it going here: {}, {}", &key[0..8], PIKE_NAMESPACE);
                     debug!("received state change for unknown address: {}", key);
                 }
                 Ok(None)

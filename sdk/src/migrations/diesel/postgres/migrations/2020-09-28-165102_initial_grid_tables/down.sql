@@ -21,6 +21,8 @@ DROP TABLE grid_circuit_proposal_vote_record;
 DROP TABLE agent;
 DROP TABLE role;
 DROP TABLE organization;
+DROP TABLE alternate_identifier;
+DROP TABLE org_location;
 DROP TABLE associated_agent;
 DROP TABLE property;
 DROP TABLE proposal;

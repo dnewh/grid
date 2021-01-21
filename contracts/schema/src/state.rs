@@ -31,7 +31,7 @@ cfg_if! {
 pub const GRID_NAMESPACE: &str = "621dee";
 pub const GRID_SCHEMA_NAMESPACE: &str = "01";
 
-pub const PIKE_NAMESPACE: &str = "cad11d";
+pub const PIKE_NAMESPACE: &str = "621dee05";
 pub const PIKE_AGENT_NAMESPACE: &str = "00";
 
 /// Computes the address a Pike Agent is stored at based on its public_key
@@ -39,7 +39,7 @@ pub fn compute_agent_address(public_key: &str) -> String {
     let mut sha = Sha512::new();
     sha.input(public_key.as_bytes());
 
-    String::from(PIKE_NAMESPACE) + PIKE_AGENT_NAMESPACE + &sha.result_str()[..62].to_string()
+    String::from(PIKE_NAMESPACE) + PIKE_AGENT_NAMESPACE + &sha.result_str()[..60].to_string()
 }
 
 /// Computes the address a Grid Schema is stored at based on its name

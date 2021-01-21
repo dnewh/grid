@@ -30,7 +30,6 @@ mod integration {
 
     static ORG_ID: &str = "762";
     static ORG_NAME: &str = "MyOrg";
-    static ORG_ADDRESS: &str = "hq";
 
     static SCHEMA_CREATE_FILE: &str = "tests/products/test_product_schema.yaml";
 
@@ -154,10 +153,23 @@ mod integration {
             .arg("create")
             .arg(&org_id)
             .arg(&ORG_NAME)
-            .arg(&ORG_ADDRESS)
             .args(&["--metadata", &format!("gs1_company_prefixes={}", &org_id)])
             .args(&["--wait", "10000"]);
         cmd_org_create.assert().success();
+
+        //run `grid role create for necessary permissions`
+        let mut cmd_role_create = make_grid_command();
+        let permissions = "schema:can-create-schema,schema:can-update-schema,schema:can-delete-schema,product:can-create-product,product:can-update-product,product:can-delete-product";
+        cmd_role_create
+            .arg("role")
+            .args(&["--url", &url])
+            .arg("create")
+            .arg(&org_id)
+            .arg(format!("{}.test", &org_id))
+            .arg("Schema/product perms")
+            .args(&["--permissions", &permissions])
+            .args(&["--wait", "10000"]);
+        cmd_role_create.assert().success();
 
         //run `grid agent create`
         let mut pub_key = fs::read_to_string(PUB_KEY_FILE).unwrap();
@@ -171,12 +183,9 @@ mod integration {
             .arg(&org_id)
             .arg(&pub_key)
             .arg("--active")
+            .args(&["--role", &format!("{}.test", &org_id)])
+            .args(&["--role", &format!("{}.admin", &org_id)])
             .args(&["--role", "admin"])
-            .args(&["--role", "can_create_product"])
-            .args(&["--role", "can_update_product"])
-            .args(&["--role", "can_delete_product"])
-            .args(&["--role", "can_create_schema"])
-            .args(&["--role", "can_update_schema"])
             .args(&["--wait", "10000"]);
         cmd_agent_update.assert().success();
 

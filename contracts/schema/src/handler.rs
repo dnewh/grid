@@ -36,9 +36,10 @@ use grid_sdk::protos::FromBytes;
 
 use crate::payload::validate_payload;
 use crate::state::GridSchemaState;
+use crate::permissions::{permission_to_perm_string, Permission};
 
 pub const GRID_NAMESPACE: &str = "621dee";
-pub const PIKE_NAMESPACE: &str = "cad11d";
+pub const PIKE_NAMESPACE: &str = "621dee05";
 
 #[cfg(target_arch = "wasm32")]
 // Sabre apply must return a bool
@@ -137,8 +138,6 @@ fn schema_create(
         )));
     }
 
-    check_permission(perm_checker, signer, "can_create_schema")?;
-
     let agent = match state.get_agent(signer)? {
         Some(agent) => agent,
         None => {
@@ -155,6 +154,16 @@ fn schema_create(
             signer
         )));
     }
+
+    perm_checker
+        .has_permission(
+            signer,
+            &permission_to_perm_string(Permission::CanCreateSchema),
+            agent.org_id(),
+        )
+        .map_err(|err| {
+            ApplyError::InternalError(format!("Failed to check permissions: {}", err))
+        })?;
 
     let schema = SchemaBuilder::new()
         .with_name(schema_name.into())
@@ -186,7 +195,7 @@ fn schema_update(
         }
     };
 
-    check_permission(perm_checker, signer, "can_update_schema")?;
+    // check_permission(perm_checker, signer, "can_update_schema")?;
 
     let agent = match state.get_agent(signer)? {
         Some(agent) => agent,
@@ -205,13 +214,23 @@ fn schema_update(
         )));
     }
 
-    if agent.org_id() != schema.owner() {
-        return Err(ApplyError::InvalidTransaction(format!(
-            "The signer does not belong to the correct organization: {} != {}",
-            agent.org_id(),
-            schema.owner()
-        )));
-    }
+    // if agent.org_id() != schema.owner() {
+    //     return Err(ApplyError::InvalidTransaction(format!(
+    //         "The signer does not belong to the correct organization: {} != {}",
+    //         agent.org_id(),
+    //         schema.owner()
+    //     )));
+    // }
+
+    perm_checker
+        .has_permission(
+            signer,
+            &permission_to_perm_string(Permission::CanUpdateSchema),
+            schema.owner(),
+        )
+        .map_err(|err| {
+            ApplyError::InternalError(format!("Failed to check permissions: {}", err))
+        })?;
 
     let mut properties = schema.properties().to_vec();
     properties.sort_by_key(|p| p.name().to_string());
@@ -240,20 +259,20 @@ fn schema_update(
     state.set_schema(schema_name, schema)
 }
 
-fn check_permission(
-    perm_checker: &PermissionChecker,
-    signer: &str,
-    permission: &str,
-) -> Result<(), ApplyError> {
-    match perm_checker.has_permission(signer, permission) {
-        Ok(true) => Ok(()),
-        Ok(false) => Err(ApplyError::InvalidTransaction(format!(
-            "The signer does not have the {} permission: {}.",
-            permission, signer,
-        ))),
-        Err(e) => Err(ApplyError::InvalidTransaction(format!("{}", e))),
-    }
-}
+// fn check_permission(
+//     perm_checker: &PermissionChecker,
+//     signer: &str,
+//     permission: &str,
+// ) -> Result<(), ApplyError> {
+//     match perm_checker.has_permission(signer, permission) {
+//         Ok(true) => Ok(()),
+//         Ok(false) => Err(ApplyError::InvalidTransaction(format!(
+//             "The signer does not have the {} permission: {}.",
+//             permission, signer,
+//         ))),
+//         Err(e) => Err(ApplyError::InvalidTransaction(format!("{}", e))),
+//     }
+// }
 
 #[cfg(test)]
 mod tests {
