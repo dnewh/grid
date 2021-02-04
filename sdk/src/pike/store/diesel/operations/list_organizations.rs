@@ -12,30 +12,28 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use super::OrganizationStoreOperations;
+use super::PikeStoreOperations;
 use crate::commits::MAX_COMMIT_NUM;
 use crate::error::InternalError;
-use crate::organizations::store::diesel::models::OrganizationModel;
-use crate::organizations::store::diesel::{schema::organization, OrganizationStoreError};
-use crate::organizations::store::Organization;
+use crate::pike::store::diesel::models::OrganizationModel;
+use crate::pike::store::diesel::{schema::organization, PikeStoreError};
+use crate::pike::store::Organization;
 
 use diesel::prelude::*;
 
-pub(in crate::organizations::store::diesel) trait OrganizationStoreListOrganizationsOperation {
+pub(in crate::pike::store::diesel) trait PikeStoreListOrganizationsOperation {
     fn list_organizations(
         &self,
         service_id: Option<&str>,
-    ) -> Result<Vec<Organization>, OrganizationStoreError>;
+    ) -> Result<Vec<Organization>, PikeStoreError>;
 }
 
 #[cfg(feature = "postgres")]
-impl<'a> OrganizationStoreListOrganizationsOperation
-    for OrganizationStoreOperations<'a, diesel::pg::PgConnection>
-{
+impl<'a> PikeStoreListOrganizationsOperation for PikeStoreOperations<'a, diesel::pg::PgConnection> {
     fn list_organizations(
         &self,
         service_id: Option<&str>,
-    ) -> Result<Vec<Organization>, OrganizationStoreError> {
+    ) -> Result<Vec<Organization>, PikeStoreError> {
         let mut query = organization::table
             .into_boxed()
             .select(organization::all_columns)
@@ -50,7 +48,7 @@ impl<'a> OrganizationStoreListOrganizationsOperation
         let orgs = query
             .load::<OrganizationModel>(self.conn)
             .map_err(|err| {
-                OrganizationStoreError::InternalError(InternalError::from_source(Box::new(err)))
+                PikeStoreError::InternalError(InternalError::from_source(Box::new(err)))
             })?
             .into_iter()
             .map(Organization::from)
@@ -61,13 +59,13 @@ impl<'a> OrganizationStoreListOrganizationsOperation
 }
 
 #[cfg(feature = "sqlite")]
-impl<'a> OrganizationStoreListOrganizationsOperation
-    for OrganizationStoreOperations<'a, diesel::sqlite::SqliteConnection>
+impl<'a> PikeStoreListOrganizationsOperation
+    for PikeStoreOperations<'a, diesel::sqlite::SqliteConnection>
 {
     fn list_organizations(
         &self,
         service_id: Option<&str>,
-    ) -> Result<Vec<Organization>, OrganizationStoreError> {
+    ) -> Result<Vec<Organization>, PikeStoreError> {
         let mut query = organization::table
             .into_boxed()
             .select(organization::all_columns)
@@ -82,7 +80,7 @@ impl<'a> OrganizationStoreListOrganizationsOperation
         let orgs = query
             .load::<OrganizationModel>(self.conn)
             .map_err(|err| {
-                OrganizationStoreError::InternalError(InternalError::from_source(Box::new(err)))
+                PikeStoreError::InternalError(InternalError::from_source(Box::new(err)))
             })?
             .into_iter()
             .map(Organization::from)

@@ -30,8 +30,7 @@ cfg_if! {
 }
 
 use grid_sdk::{
-    agents::addressing::{compute_agent_address, PIKE_NAMESPACE},
-    organizations::addressing::compute_organization_address,
+    pike::addressing::{compute_agent_address, compute_organization_address, PIKE_NAMESPACE},
     protos::{
         pike_payload::{
             CreateAgentAction, CreateOrganizationAction, PikePayload, PikePayload_Action as Action,
