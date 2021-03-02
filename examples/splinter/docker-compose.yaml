@@ -160,16 +160,17 @@ services:
   # ---== alpha node ==---
 
   db-alpha:
-    image: postgres
+    # image: postgres
+    image: keinos/sqlite3:latest
     container_name: db-alpha
     hostname: db-alpha
     restart: always
     expose:
       - 5432
-    environment:
-      POSTGRES_USER: grid
-      POSTGRES_PASSWORD: grid_example
-      POSTGRES_DB: grid
+    # environment:
+    #   POSTGRES_USER: grid
+    #   POSTGRES_PASSWORD: grid_example
+    #   POSTGRES_DB: grid
 
   gridd-alpha:
     image: gridd
@@ -194,17 +195,21 @@ services:
       GRID_DAEMON_ENDPOINT: "http://gridd-alpha:8080"
     entrypoint: |
       bash -c "
-        # we need to wait for the db to have started.
-        until PGPASSWORD=grid_example psql -h db-alpha -U grid -c '\q' > /dev/null 2>&1; do
+        # # we need to wait for the db to have started.
+        # until PGPASSWORD=grid_example psql -h db-alpha -U grid -c '\q' > /dev/null 2>&1; do
+        #     >&2 echo \"Database is unavailable - sleeping\"
+        #     sleep 1
+        # done
+        until sqlite3 db-alpha '\q' > /dev/null 2>&1; do
             >&2 echo \"Database is unavailable - sleeping\"
             sleep 1
         done
         grid -vv admin keygen --skip && \
         grid -vv keygen --system && \
         grid -vv database migrate \
-            -C postgres://grid:grid_example@db-alpha/grid &&
+            -C db_alpha &&
         gridd -vv -b 0.0.0.0:8080 -k root -C splinter:http://splinterd-alpha:8085 \
-            --database-url postgres://grid:grid_example@db-alpha/grid
+            --database-url db_alpha
       "
 
   scabbard-cli-alpha:
@@ -288,16 +293,17 @@ services:
   # ---== beta node ==---
 
   db-beta:
-    image: postgres
+    # image: postgres
+    image: keinos/sqlite3:latest
     container_name: db-beta
     hostname: db-beta
     restart: always
     expose:
       - 5432
-    environment:
-      POSTGRES_USER: grid
-      POSTGRES_PASSWORD: grid_example
-      POSTGRES_DB: grid
+    # environment:
+    #   POSTGRES_USER: grid
+    #   POSTGRES_PASSWORD: grid_example
+    #   POSTGRES_DB: grid
 
   gridd-beta:
     image: gridd
@@ -322,17 +328,21 @@ services:
       GRID_DAEMON_ENDPOINT: "http://gridd-beta:8080"
     entrypoint: |
       bash -c "
-        # we need to wait for the db to have started.
-        until PGPASSWORD=grid_example psql -h db-beta -U grid -c '\q' > /dev/null 2>&1; do
+        # # we need to wait for the db to have started.
+        # until PGPASSWORD=grid_example psql -h db-beta -U grid -c '\q' > /dev/null 2>&1; do
+        #     >&2 echo \"Database is unavailable - sleeping\"
+        #     sleep 1
+        # done
+        until sqlite3 db-beta '\q' > /dev/null 2>&1; do
             >&2 echo \"Database is unavailable - sleeping\"
             sleep 1
         done
         grid -vv admin keygen --skip && \
         grid -vv keygen --system && \
         grid -vv database migrate \
-            -C postgres://grid:grid_example@db-beta/grid &&
+            -C db_beta &&
         gridd -vv -k root -b 0.0.0.0:8080 -C splinter:http://splinterd-beta:8085 \
-            --database-url postgres://grid:grid_example@db-beta/grid
+            --database-url db_beta
       "
 
   scabbard-cli-beta:
@@ -415,16 +425,17 @@ services:
   # ---== gamma node ==---
 
   db-gamma:
-    image: postgres
+    # image: postgres
+    image: keinos/sqlite3:latest
     container_name: db-gamma
     hostname: db-gamma
     restart: always
     expose:
       - 5432
-    environment:
-      POSTGRES_USER: grid
-      POSTGRES_PASSWORD: grid_example
-      POSTGRES_DB: grid
+    # environment:
+    #   POSTGRES_USER: grid
+    #   POSTGRES_PASSWORD: grid_example
+    #   POSTGRES_DB: grid
 
   gridd-gamma:
     image: gridd
@@ -449,17 +460,21 @@ services:
       GRID_DAEMON_ENDPOINT: "http://gridd-gamma:8080"
     entrypoint: |
       bash -c "
-        # we need to wait for the db to have started.
-        until PGPASSWORD=grid_example psql -h db-gamma -U grid -c '\q' > /dev/null 2>&1; do
+        # # we need to wait for the db to have started.
+        # until PGPASSWORD=grid_example psql -h db-gamma -U grid -c '\q' > /dev/null 2>&1; do
+        #     >&2 echo \"Database is unavailable - sleeping\"
+        #     sleep 1
+        # done
+        until sqlite3 db-gamma '\q' > /dev/null 2>&1; do
             >&2 echo \"Database is unavailable - sleeping\"
             sleep 1
         done
         grid -vv admin keygen --skip && \
         grid -vv keygen --system && \
         grid -vv database migrate \
-            -C postgres://grid:grid_example@db-gamma/grid &&
+            -C db_gamma &&
         gridd -vv -b 0.0.0.0:8080 -k root -C splinter:http://splinterd-gamma:8085 \
-            --database-url postgres://grid:grid_example@db-gamma/grid
+            --database-url db_gamma
       "
 
   splinterd-gamma:

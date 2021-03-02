@@ -129,6 +129,7 @@ impl<'a> PikeStoreListAgentsOperation
             }
 
             let agent_models = query.load::<AgentModel>(self.conn).map_err(|err| {
+                println!("ERROR HERE: {:?}", err);
                 PikeStoreError::InternalError(InternalError::from_source(Box::new(err)))
             })?;
 
@@ -141,6 +142,8 @@ impl<'a> PikeStoreListAgentsOperation
             } else {
                 count_query = count_query.filter(pike_agent::service_id.is_null());
             }
+
+            println!("AGENT MODELS: {:?}", agent_models);
 
             let total = count_query.count().get_result(self.conn)?;
 

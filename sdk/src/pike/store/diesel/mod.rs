@@ -61,6 +61,7 @@ impl<C: diesel::Connection> DieselPikeStore<C> {
 impl PikeStore for DieselPikeStore<diesel::pg::PgConnection> {
     fn add_agent(&self, agent: Agent) -> Result<(), PikeStoreError> {
         PikeStoreOperations::new(&*self.connection_pool.get().map_err(|err| {
+            println!("ERROR HERE");
             PikeStoreError::ResourceTemporarilyUnavailableError(
                 ResourceTemporarilyUnavailableError::from_source(Box::new(err)),
             )
@@ -89,6 +90,7 @@ impl PikeStore for DieselPikeStore<diesel::pg::PgConnection> {
         limit: i64,
     ) -> Result<AgentList, PikeStoreError> {
         PikeStoreOperations::new(&*self.connection_pool.get().map_err(|err| {
+            println!("ERROR HERE LIST");
             PikeStoreError::ResourceTemporarilyUnavailableError(
                 ResourceTemporarilyUnavailableError::from_source(Box::new(err)),
             )
@@ -202,6 +204,7 @@ impl PikeStore for DieselPikeStore<diesel::pg::PgConnection> {
 impl PikeStore for DieselPikeStore<diesel::sqlite::SqliteConnection> {
     fn add_agent(&self, agent: Agent) -> Result<(), PikeStoreError> {
         PikeStoreOperations::new(&*self.connection_pool.get().map_err(|err| {
+            println!("ERROR HERE");
             PikeStoreError::ResourceTemporarilyUnavailableError(
                 ResourceTemporarilyUnavailableError::from_source(Box::new(err)),
             )

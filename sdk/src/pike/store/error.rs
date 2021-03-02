@@ -59,6 +59,7 @@ impl From<diesel_error> for PikeStoreError {
     fn from(err: diesel_error) -> PikeStoreError {
         match err {
             diesel_error::DatabaseError(DatabaseErrorKind::UniqueViolation, _) => {
+                println!("E1");
                 PikeStoreError::ConstraintViolationError(
                     ConstraintViolationError::from_source_with_violation_type(
                         ConstraintViolationType::Unique,
@@ -67,6 +68,7 @@ impl From<diesel_error> for PikeStoreError {
                 )
             }
             diesel_error::DatabaseError(DatabaseErrorKind::ForeignKeyViolation, _) => {
+                println!("E2");
                 PikeStoreError::ConstraintViolationError(
                     ConstraintViolationError::from_source_with_violation_type(
                         ConstraintViolationType::ForeignKey,
@@ -74,7 +76,10 @@ impl From<diesel_error> for PikeStoreError {
                     ),
                 )
             }
-            _ => PikeStoreError::InternalError(InternalError::from_source(Box::new(err))),
+            _ => {
+                println!("E3");
+                return PikeStoreError::InternalError(InternalError::from_source(Box::new(err)));
+            }
         }
     }
 }
@@ -82,6 +87,7 @@ impl From<diesel_error> for PikeStoreError {
 #[cfg(feature = "diesel")]
 impl From<PoolError> for PikeStoreError {
     fn from(err: PoolError) -> PikeStoreError {
+        println!("E4");
         PikeStoreError::ResourceTemporarilyUnavailableError(
             ResourceTemporarilyUnavailableError::from_source(Box::new(err)),
         )

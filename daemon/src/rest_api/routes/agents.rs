@@ -175,7 +175,8 @@ pub async fn list_agents(
     _: AcceptServiceIdParam,
 ) -> Result<HttpResponse, RestApiResponseError> {
     let paging = query_paging.into_inner();
-    state
+    println!("IN LIST_AGENTS");
+    let agents = state
         .database_connection
         .send(ListAgents {
             service_id: query_service_id.into_inner().service_id,
@@ -183,7 +184,18 @@ pub async fn list_agents(
             limit: paging.limit(),
         })
         .await?
-        .map(|agents| HttpResponse::Ok().json(agents))
+        .map_err(|err| {
+            println!("{}", err.to_string());
+            return RestApiResponseError::RequestHandlerError(err.to_string())
+        });
+
+    agents
+        .map(|agents| {
+            println!("HERE: {:?}", agents);
+            let response = HttpResponse::Ok().json(agents);
+            println!("JSON RESPONSE: {:?}", response);
+            return response;
+        })
 }
 
 struct FetchAgent {

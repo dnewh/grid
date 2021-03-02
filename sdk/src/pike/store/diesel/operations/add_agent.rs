@@ -62,6 +62,7 @@ impl<'a> PikeStoreAddAgentOperation for PikeStoreOperations<'a, diesel::pg::PgCo
                     }
                 })
                 .map_err(|err| {
+                    println!("ERROR HERE 1");
                     PikeStoreError::InternalError(InternalError::from_source(Box::new(err)))
                 })?;
 
@@ -107,6 +108,7 @@ impl<'a> PikeStoreAddAgentOperation for PikeStoreOperations<'a, diesel::pg::PgCo
                         }
                     })
                     .map_err(|err| {
+                        println!("ERROR HERE 2");
                         PikeStoreError::InternalError(InternalError::from_source(Box::new(err)))
                     })?;
 
@@ -165,8 +167,12 @@ impl<'a> PikeStoreAddAgentOperation for PikeStoreOperations<'a, diesel::sqlite::
                     }
                 })
                 .map_err(|err| {
+                    println!("ERROR HERE 1");
                     PikeStoreError::InternalError(InternalError::from_source(Box::new(err)))
                 })?;
+
+            println!("AGENT ASDF:{:?}", agent);
+            println!("ROLES asdf:{:?}", roles);
 
             if duplicate_agent.is_some() {
                 update(pike_agent::table)
@@ -189,6 +195,7 @@ impl<'a> PikeStoreAddAgentOperation for PikeStoreOperations<'a, diesel::sqlite::
                 .map_err(PikeStoreError::from)?;
 
             for role in roles {
+                println!("WHY ROLES");
                 let duplicate_role = pike_agent_role_assoc::table
                     .filter(
                         pike_agent_role_assoc::agent_public_key
@@ -210,6 +217,7 @@ impl<'a> PikeStoreAddAgentOperation for PikeStoreOperations<'a, diesel::sqlite::
                         }
                     })
                     .map_err(|err| {
+                        println!("ERROR HERE 2");
                         PikeStoreError::InternalError(InternalError::from_source(Box::new(err)))
                     })?;
 
