@@ -294,8 +294,10 @@ services:
     expose:
       - 80
     ports:
-      - "3030:80"
+      - "3033:80"
     environment:
+      REACT_APP_SPLINTER_URL: '/splinterd-alpha'
+      REACT_APP_SAPLING_URL: '/sapling-dev-server-alpha'
       SPLINTER_URL: "http://splinterd-alpha:8085"
       SAPLING_URL: " http://sapling-dev-server-alpha:80"
       GRID_URL: "http://gridd-alpha:8080"
