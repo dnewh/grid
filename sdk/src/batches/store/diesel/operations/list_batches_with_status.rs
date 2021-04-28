@@ -39,27 +39,29 @@ impl<'a> ListBatchesWithStatusOperation for BatchStoreOperations<'a, diesel::pg:
         offset: i64,
         limit: i64,
     ) -> Result<BatchList, BatchStoreError> {
-        let batches = batches::table
-            .select(batches::all_columns)
-            .filter(batches::status.eq(status))
-            .offset(offset)
-            .limit(limit)
-            .load::<BatchModel>(self.conn)
-            .map(|models| models.into_iter().map(|model| model.into()).collect())
-            .map_err(|err| {
-                BatchStoreError::InternalError(InternalError::from_source(Box::new(err)))
-            })?;
+        self.conn.transaction::<_, BatchStoreError, _>(|| {
+            let batches = batches::table
+                .select(batches::all_columns)
+                .filter(batches::status.eq(status))
+                .offset(offset)
+                .limit(limit)
+                .load::<BatchModel>(self.conn)
+                .map(|models| models.into_iter().map(|model| model.into()).collect())
+                .map_err(|err| {
+                    BatchStoreError::InternalError(InternalError::from_source(Box::new(err)))
+                })?;
 
-        let total = batches::table
-            .select(batches::all_columns)
-            .filter(batches::status.eq(status))
-            .count()
-            .get_result(self.conn)
-            .map_err(|err| {
-                BatchStoreError::InternalError(InternalError::from_source(Box::new(err)))
-            })?;
+            let total = batches::table
+                .select(batches::all_columns)
+                .filter(batches::status.eq(status))
+                .count()
+                .get_result(self.conn)
+                .map_err(|err| {
+                    BatchStoreError::InternalError(InternalError::from_source(Box::new(err)))
+                })?;
 
-        Ok(BatchList::new(batches, Paging::new(offset, limit, total)))
+            Ok(BatchList::new(batches, Paging::new(offset, limit, total)))
+        })
     }
 }
 
@@ -73,26 +75,28 @@ impl<'a> ListBatchesWithStatusOperation
         offset: i64,
         limit: i64,
     ) -> Result<BatchList, BatchStoreError> {
-        let batches = batches::table
-            .select(batches::all_columns)
-            .filter(batches::status.eq(status))
-            .offset(offset)
-            .limit(limit)
-            .load::<BatchModel>(self.conn)
-            .map(|models| models.into_iter().map(|model| model.into()).collect())
-            .map_err(|err| {
-                BatchStoreError::InternalError(InternalError::from_source(Box::new(err)))
-            })?;
+        self.conn.transaction::<_, BatchStoreError, _>(|| {
+            let batches = batches::table
+                .select(batches::all_columns)
+                .filter(batches::status.eq(status))
+                .offset(offset)
+                .limit(limit)
+                .load::<BatchModel>(self.conn)
+                .map(|models| models.into_iter().map(|model| model.into()).collect())
+                .map_err(|err| {
+                    BatchStoreError::InternalError(InternalError::from_source(Box::new(err)))
+                })?;
 
-        let total = batches::table
-            .select(batches::all_columns)
-            .filter(batches::status.eq(status))
-            .count()
-            .get_result(self.conn)
-            .map_err(|err| {
-                BatchStoreError::InternalError(InternalError::from_source(Box::new(err)))
-            })?;
+            let total = batches::table
+                .select(batches::all_columns)
+                .filter(batches::status.eq(status))
+                .count()
+                .get_result(self.conn)
+                .map_err(|err| {
+                    BatchStoreError::InternalError(InternalError::from_source(Box::new(err)))
+                })?;
 
-        Ok(BatchList::new(batches, Paging::new(offset, limit, total)))
+            Ok(BatchList::new(batches, Paging::new(offset, limit, total)))
+        })
     }
 }

@@ -25,27 +25,31 @@ pub(in crate::batches::store::diesel) trait UpdateStatusOperation {
 #[cfg(feature = "postgres")]
 impl<'a> UpdateStatusOperation for BatchStoreOperations<'a, diesel::pg::PgConnection> {
     fn update_status(&self, id: &str, status: &str) -> Result<(), BatchStoreError> {
-        update(batches::table)
-            .filter(batches::id.eq(id))
-            .set(batches::status.eq(status))
-            .execute(self.conn)
-            .map(|_| ())
-            .map_err(|err| {
-                BatchStoreError::InternalError(InternalError::from_source(Box::new(err)))
-            })
+        self.conn.transaction::<_, BatchStoreError, _>(|| {
+            update(batches::table)
+                .filter(batches::id.eq(id))
+                .set(batches::status.eq(status))
+                .execute(self.conn)
+                .map(|_| ())
+                .map_err(|err| {
+                    BatchStoreError::InternalError(InternalError::from_source(Box::new(err)))
+                })
+        })
     }
 }
 
 #[cfg(feature = "sqlite")]
 impl<'a> UpdateStatusOperation for BatchStoreOperations<'a, diesel::sqlite::SqliteConnection> {
     fn update_status(&self, id: &str, status: &str) -> Result<(), BatchStoreError> {
-        update(batches::table)
-            .filter(batches::id.eq(id))
-            .set(batches::status.eq(status))
-            .execute(self.conn)
-            .map(|_| ())
-            .map_err(|err| {
-                BatchStoreError::InternalError(InternalError::from_source(Box::new(err)))
-            })
+        self.conn.transaction::<_, BatchStoreError, _>(|| {
+            update(batches::table)
+                .filter(batches::id.eq(id))
+                .set(batches::status.eq(status))
+                .execute(self.conn)
+                .map(|_| ())
+                .map_err(|err| {
+                    BatchStoreError::InternalError(InternalError::from_source(Box::new(err)))
+                })
+        })
     }
 }

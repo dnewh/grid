@@ -42,64 +42,19 @@ impl<'a> GetProductOperation for ProductStoreOperations<'a, diesel::pg::PgConnec
         product_id: &str,
         service_id: Option<&str>,
     ) -> Result<Option<Product>, ProductStoreError> {
-        self.conn.transaction::<_, PikeStoreError, _>(|| {
-            let mut query = product::table
-                .into_boxed()
-                .select(product::all_columns)
-                .filter(
-                    product::product_id
-                        .eq(product_id)
-                        .and(product::end_commit_num.eq(MAX_COMMIT_NUM)),
-                );
+        self.conn.transaction::<_, ProductStoreError, _>(|| {
+            let product =
+                if let Some(product) = pg::get_product(&*self.conn, product_id, service_id)? {
+                    product
+                } else {
+                    return Ok(None);
+                };
 
-            if let Some(service_id) = service_id {
-                query = query.filter(product::service_id.eq(service_id));
-            } else {
-                query = query.filter(product::service_id.is_null());
-            }
+            let root_values = pg::get_root_values(&*self.conn, product_id)?;
 
-            let product = query
-                .first(conn)
-                .map(Some)
-                .or_else(|err| if err == NotFound { Ok(None) } else { Err(err) })
-                .map_err(|err| {
-                    ProductStoreError::InternalError(InternalError::from_source(Box::new(err)))
-                })?;
+            let values = pg::get_property_values(&*self.conn, root_values)?;
 
-            match product {
-                Some(product) => {
-                    let root_values = product_property_value::table
-                        .select(product_property_value::all_columns)
-                        .filter(
-                            product_property_value::product_id
-                                .eq(product_id)
-                                .and(product_property_value::parent_property.is_null())
-                                .and(product_property_value::end_commit_num.eq(MAX_COMMIT_NUM)),
-                        )
-                        .load::<ProductPropertyValue>(conn)?;
-
-                    let mut values = Vec::new();
-
-                    for root_value in root_values {
-                        let children = product_property_value::table
-                            .select(product_property_value::all_columns)
-                            .filter(product_property_value::parent_property.eq(&root_value.parent_property))
-                            .load(conn)?;
-
-                        if children.is_empty() {
-                            values.push(PropertyValue::from(root_value));
-                        } else {
-                            values.push(PropertyValue::from((
-                                root_value,
-                                get_property_values(conn, children)?,
-                            )));
-                        }
-                    }
-
-                    Ok(Some(Product::from((product, values))))
-                }
-                None => Ok(None),
-            }
+            Ok(Some(Product::from((product, values))))
         })
     }
 }
@@ -111,64 +66,161 @@ impl<'a> GetProductOperation for ProductStoreOperations<'a, diesel::sqlite::Sqli
         product_id: &str,
         service_id: Option<&str>,
     ) -> Result<Option<Product>, ProductStoreError> {
-        self.conn.transaction::<_, PikeStoreError, _>(|| {
-            let mut query = product::table
-                .into_boxed()
-                .select(product::all_columns)
-                .filter(
-                    product::product_id
-                        .eq(product_id)
-                        .and(product::end_commit_num.eq(MAX_COMMIT_NUM)),
-                );
+        self.conn.transaction::<_, ProductStoreError, _>(|| {
+            let product =
+                if let Some(product) = sqlite::get_product(&*self.conn, product_id, service_id)? {
+                    product
+                } else {
+                    return Ok(None);
+                };
 
-            if let Some(service_id) = service_id {
-                query = query.filter(product::service_id.eq(service_id));
-            } else {
-                query = query.filter(product::service_id.is_null());
-            }
+            let root_values = sqlite::get_root_values(&*self.conn, product_id)?;
 
-            let product = query
-                .first(conn)
-                .map(Some)
-                .or_else(|err| if err == NotFound { Ok(None) } else { Err(err) })
-                .map_err(|err| {
-                    ProductStoreError::InternalError(InternalError::from_source(Box::new(err)))
-                })?;
+            let values = sqlite::get_property_values(&*self.conn, root_values)?;
 
-            match product {
-                Some(product) => {
-                    let root_values = product_property_value::table
-                        .select(product_property_value::all_columns)
-                        .filter(
-                            product_property_value::product_id
-                                .eq(product_id)
-                                .and(product_property_value::parent_property.is_null())
-                                .and(product_property_value::end_commit_num.eq(MAX_COMMIT_NUM)),
-                        )
-                        .load::<ProductPropertyValue>(conn)?;
-
-                    let mut values = Vec::new();
-
-                    for root_value in root_values {
-                        let children = product_property_value::table
-                            .select(product_property_value::all_columns)
-                            .filter(product_property_value::parent_property.eq(&root_value.parent_property))
-                            .load(conn)?;
-
-                        if children.is_empty() {
-                            values.push(PropertyValue::from(root_value));
-                        } else {
-                            values.push(PropertyValue::from((
-                                root_value,
-                                get_property_values(conn, children)?,
-                            )));
-                        }
-                    }
-
-                    Ok(Some(Product::from((product, values))))
-                }
-                None => Ok(None),
-            }
+            Ok(Some(Product::from((product, values))))
         })
+    }
+}
+
+#[cfg(feature = "postgres")]
+mod pg {
+    use super::*;
+
+    pub fn get_product(
+        conn: &PgConnection,
+        product_id: &str,
+        service_id: Option<&str>,
+    ) -> QueryResult<Option<ModelProduct>> {
+        let mut query = product::table
+            .into_boxed()
+            .select(product::all_columns)
+            .filter(
+                product::product_id
+                    .eq(product_id)
+                    .and(product::end_commit_num.eq(MAX_COMMIT_NUM)),
+            );
+
+        if let Some(service_id) = service_id {
+            query = query.filter(product::service_id.eq(service_id));
+        } else {
+            query = query.filter(product::service_id.is_null());
+        }
+
+        query
+            .first(conn)
+            .map(Some)
+            .or_else(|err| if err == NotFound { Ok(None) } else { Err(err) })
+    }
+
+    pub fn get_root_values(
+        conn: &PgConnection,
+        product_id: &str,
+    ) -> QueryResult<Vec<ProductPropertyValue>> {
+        product_property_value::table
+            .select(product_property_value::all_columns)
+            .filter(
+                product_property_value::product_id
+                    .eq(product_id)
+                    .and(product_property_value::parent_property.is_null())
+                    .and(product_property_value::end_commit_num.eq(MAX_COMMIT_NUM)),
+            )
+            .load::<ProductPropertyValue>(conn)
+    }
+
+    pub fn get_property_values(
+        conn: &PgConnection,
+        root_values: Vec<ProductPropertyValue>,
+    ) -> Result<Vec<PropertyValue>, ProductStoreError> {
+        let mut definitions = Vec::new();
+
+        for root_value in root_values {
+            let children = product_property_value::table
+                .select(product_property_value::all_columns)
+                .filter(product_property_value::parent_property.eq(&root_value.parent_property))
+                .load(conn)?;
+
+            if children.is_empty() {
+                definitions.push(PropertyValue::from(root_value));
+            } else {
+                definitions.push(PropertyValue::from((
+                    root_value,
+                    get_property_values(conn, children)?,
+                )));
+            }
+        }
+
+        Ok(definitions)
+    }
+}
+
+#[cfg(feature = "sqlite")]
+mod sqlite {
+    use super::*;
+
+    pub fn get_product(
+        conn: &SqliteConnection,
+        product_id: &str,
+        service_id: Option<&str>,
+    ) -> QueryResult<Option<ModelProduct>> {
+        let mut query = product::table
+            .into_boxed()
+            .select(product::all_columns)
+            .filter(
+                product::product_id
+                    .eq(product_id)
+                    .and(product::end_commit_num.eq(MAX_COMMIT_NUM)),
+            );
+
+        if let Some(service_id) = service_id {
+            query = query.filter(product::service_id.eq(service_id));
+        } else {
+            query = query.filter(product::service_id.is_null());
+        }
+
+        query
+            .first(conn)
+            .map(Some)
+            .or_else(|err| if err == NotFound { Ok(None) } else { Err(err) })
+    }
+
+    pub fn get_root_values(
+        conn: &SqliteConnection,
+        product_id: &str,
+    ) -> QueryResult<Vec<ProductPropertyValue>> {
+        product_property_value::table
+            .select(product_property_value::all_columns)
+            .filter(
+                product_property_value::product_id
+                    .eq(product_id)
+                    .and(product_property_value::parent_property.is_null())
+                    .and(product_property_value::end_commit_num.eq(MAX_COMMIT_NUM)),
+            )
+            .load::<ProductPropertyValue>(conn)
+    }
+
+    pub fn get_property_values(
+        conn: &SqliteConnection,
+        root_values: Vec<ProductPropertyValue>,
+    ) -> Result<Vec<PropertyValue>, ProductStoreError> {
+        let mut definitions = Vec::new();
+
+        for root_value in root_values {
+            let children = product_property_value::table
+                .select(product_property_value::all_columns)
+                .filter(product_property_value::parent_property.eq(&root_value.parent_property))
+                .load(conn)?;
+
+            if children.is_empty() {
+                definitions.push(PropertyValue::from(root_value));
+            } else {
+                definitions.push(PropertyValue::from((
+                    root_value,
+                    get_property_values(conn, children)?,
+                )));
+            }
+        }
+
+        Ok(definitions)
     }
 }

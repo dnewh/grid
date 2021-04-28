@@ -26,29 +26,33 @@ pub(in crate::batches::store::diesel) trait GetBatchOperation {
 #[cfg(feature = "postgres")]
 impl<'a> GetBatchOperation for BatchStoreOperations<'a, diesel::pg::PgConnection> {
     fn get_batch(&self, id: &str) -> Result<Option<BatchModel>, BatchStoreError> {
-        batches::table
-            .select(batches::all_columns)
-            .filter(batches::id.eq(id))
-            .first::<BatchModel>(self.conn)
-            .map(Some)
-            .or_else(|err| if err == NotFound { Ok(None) } else { Err(err) })
-            .map_err(|err| {
-                BatchStoreError::InternalError(InternalError::from_source(Box::new(err)))
-            })
+        self.conn.transaction::<_, BatchStoreError, _>(|| {
+            batches::table
+                .select(batches::all_columns)
+                .filter(batches::id.eq(id))
+                .first::<BatchModel>(self.conn)
+                .map(Some)
+                .or_else(|err| if err == NotFound { Ok(None) } else { Err(err) })
+                .map_err(|err| {
+                    BatchStoreError::InternalError(InternalError::from_source(Box::new(err)))
+                })
+        })
     }
 }
 
 #[cfg(feature = "sqlite")]
 impl<'a> GetBatchOperation for BatchStoreOperations<'a, diesel::sqlite::SqliteConnection> {
     fn get_batch(&self, id: &str) -> Result<Option<BatchModel>, BatchStoreError> {
-        batches::table
-            .select(batches::all_columns)
-            .filter(batches::id.eq(id))
-            .first::<BatchModel>(self.conn)
-            .map(Some)
-            .or_else(|err| if err == NotFound { Ok(None) } else { Err(err) })
-            .map_err(|err| {
-                BatchStoreError::InternalError(InternalError::from_source(Box::new(err)))
-            })
+        self.conn.transaction::<_, BatchStoreError, _>(|| {
+            batches::table
+                .select(batches::all_columns)
+                .filter(batches::id.eq(id))
+                .first::<BatchModel>(self.conn)
+                .map(Some)
+                .or_else(|err| if err == NotFound { Ok(None) } else { Err(err) })
+                .map_err(|err| {
+                    BatchStoreError::InternalError(InternalError::from_source(Box::new(err)))
+                })
+        })
     }
 }

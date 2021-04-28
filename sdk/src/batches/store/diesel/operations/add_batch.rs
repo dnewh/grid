@@ -26,25 +26,29 @@ pub(in crate::batches::store::diesel) trait AddBatchOperation {
 #[cfg(feature = "postgres")]
 impl<'a> AddBatchOperation for BatchStoreOperations<'a, diesel::pg::PgConnection> {
     fn add_batch(&self, batch: BatchModel) -> Result<(), BatchStoreError> {
-        insert_into(batches::table)
-            .values(batch)
-            .execute(&*self.conn)
-            .map(|_| ())
-            .map_err(|err| {
-                BatchStoreError::InternalError(InternalError::from_source(Box::new(err)))
-            })
+        self.conn.transaction::<_, BatchStoreError, _>(|| {
+            insert_into(batches::table)
+                .values(batch)
+                .execute(&*self.conn)
+                .map(|_| ())
+                .map_err(|err| {
+                    BatchStoreError::InternalError(InternalError::from_source(Box::new(err)))
+                })
+        })
     }
 }
 
 #[cfg(feature = "sqlite")]
 impl<'a> AddBatchOperation for BatchStoreOperations<'a, diesel::sqlite::SqliteConnection> {
     fn add_batch(&self, batch: BatchModel) -> Result<(), BatchStoreError> {
-        insert_into(batches::table)
-            .values(batch)
-            .execute(&*self.conn)
-            .map(|_| ())
-            .map_err(|err| {
-                BatchStoreError::InternalError(InternalError::from_source(Box::new(err)))
-            })
+        self.conn.transaction::<_, BatchStoreError, _>(|| {
+            insert_into(batches::table)
+                .values(batch)
+                .execute(&*self.conn)
+                .map(|_| ())
+                .map_err(|err| {
+                    BatchStoreError::InternalError(InternalError::from_source(Box::new(err)))
+                })
+        })
     }
 }
