@@ -74,7 +74,7 @@ impl BatchList {
 pub trait BatchStore: Send + Sync {
     fn add_batch(&self, batch: Batch) -> Result<(), BatchStoreError>;
 
-    fn fetch_batch(&self, id: &str) -> Result<Option<Batch>, BatchStoreError>;
+    fn get_batch(&self, id: &str) -> Result<Option<Batch>, BatchStoreError>;
 
     fn list_batches(&self, offset: i64, limit: i64) -> Result<BatchList, BatchStoreError>;
 

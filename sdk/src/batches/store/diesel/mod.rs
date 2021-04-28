@@ -23,7 +23,7 @@ use super::{Batch, BatchList, BatchStatus, BatchStore, BatchStoreError};
 use crate::error::ResourceTemporarilyUnavailableError;
 
 use operations::add_batch::AddBatchOperation as _;
-use operations::fetch_batch::FetchBatchOperation as _;
+use operations::get_batch::GetBatchOperation as _;
 use operations::list_batches::ListBatchesOperation as _;
 use operations::list_batches_with_status::ListBatchesWithStatusOperation as _;
 use operations::update_status::UpdateStatusOperation as _;
@@ -52,13 +52,13 @@ impl BatchStore for DieselBatchStore<diesel::pg::PgConnection> {
         .add_batch(batch.into())
     }
 
-    fn fetch_batch(&self, id: &str) -> Result<Option<Batch>, BatchStoreError> {
+    fn get_batch(&self, id: &str) -> Result<Option<Batch>, BatchStoreError> {
         BatchStoreOperations::new(&*self.connection_pool.get().map_err(|err| {
             BatchStoreError::ResourceTemporarilyUnavailableError(
                 ResourceTemporarilyUnavailableError::from_source(Box::new(err)),
             )
         })?)
-        .fetch_batch(id)
+        .get_batch(id)
         .map(|op| op.map(|model| model.into()))
     }
 
@@ -106,13 +106,13 @@ impl BatchStore for DieselBatchStore<diesel::sqlite::SqliteConnection> {
         .add_batch(batch.into())
     }
 
-    fn fetch_batch(&self, id: &str) -> Result<Option<Batch>, BatchStoreError> {
+    fn get_batch(&self, id: &str) -> Result<Option<Batch>, BatchStoreError> {
         BatchStoreOperations::new(&*self.connection_pool.get().map_err(|err| {
             BatchStoreError::ResourceTemporarilyUnavailableError(
                 ResourceTemporarilyUnavailableError::from_source(Box::new(err)),
             )
         })?)
-        .fetch_batch(id)
+        .get_batch(id)
         .map(|op| op.map(|model| model.into()))
     }
 

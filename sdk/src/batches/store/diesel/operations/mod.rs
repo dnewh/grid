@@ -13,7 +13,7 @@
 // limitations under the License.
 
 pub(super) mod add_batch;
-pub(super) mod fetch_batch;
+pub(super) mod get_batch;
 pub(super) mod list_batches;
 pub(super) mod list_batches_with_status;
 pub(super) mod update_status;
