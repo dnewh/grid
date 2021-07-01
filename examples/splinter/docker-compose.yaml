@@ -21,9 +21,25 @@ volumes:
   gridd-beta:
   gridd-gamma:
   templates-shared:
+  splinter-shared:
 
 services:
   # ---== shared services ==---
+
+  splinter-cli:
+    image: splintercommunity/splinter-cli:latest
+    container_name: splinter-cli
+    volumes:
+      - splinter-shared:/splinter_shared
+    command: |
+      bash -c "
+        if [ ! -f /splinter_shared/private/server.key ]
+        then
+          splinter-cli cert generate \
+            -d  /splinter_shared/ \
+            --force
+        fi
+      "
 
   pike-contract-builder:
     image: pike-contract-builder
@@ -200,6 +216,7 @@ services:
       - contracts-shared:/usr/share/scar
       - gridd-alpha:/etc/grid/keys
       - templates-shared:/usr/share/splinter/circuit-templates
+      - ./keys:/root/.grid/keys
     expose:
       - 8080
     ports:
@@ -228,6 +245,7 @@ services:
     hostname: scabbard-cli-alpha
     volumes:
       - gridd-alpha:/root/.splinter/keys
+      - contracts-shared:/usr/share/scar
     command: tail -f /dev/null
 
   splinterd-alpha:

@@ -76,7 +76,9 @@ impl<'a> PikeState<'a> {
     }
 
     pub fn set_role(&self, role: Role) -> Result<(), ApplyError> {
+        error!("STEP 10");
         let address = compute_role_address(&role.name(), &role.org_id());
+        error!("STEP 11");
         let mut roles = match self.context.get_state_entry(&address)? {
             Some(packed) => match RoleList::from_bytes(packed.as_slice()) {
                 Ok(role_list) => role_list.roles().to_vec(),
@@ -89,7 +91,7 @@ impl<'a> PikeState<'a> {
             },
             None => vec![],
         };
-
+        error!("STEP 12");
         let mut index = None;
         for (i, r) in roles.iter().enumerate() {
             if role.name() == r.name() && role.org_id() == r.org_id() {
@@ -110,7 +112,7 @@ impl<'a> PikeState<'a> {
             .map_err(|err| {
                 ApplyError::InvalidTransaction(format!("Cannot build role list: {:?}", err))
             })?;
-
+        error!("STEP 13");
         let serialized = match role_list.into_bytes() {
             Ok(serialized) => serialized,
             Err(err) => {
@@ -120,9 +122,11 @@ impl<'a> PikeState<'a> {
                 )));
             }
         };
+        error!("STEP 14");
         self.context
             .set_state_entry(address, serialized)
             .map_err(|err| ApplyError::InternalError(format!("{}", err)))?;
+        error!("STEP 15");
         Ok(())
     }
 

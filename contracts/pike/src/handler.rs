@@ -135,16 +135,19 @@ fn create_role(
     state: &mut PikeState,
     perm_checker: &PermissionChecker,
 ) -> Result<(), ApplyError> {
+    error!("STEP 1");
     if payload.get_org_id().is_empty() {
         return Err(ApplyError::InvalidTransaction(
             "Organization ID required".into(),
         ));
     }
 
+    error!("STEP 2");
     if payload.get_name().is_empty() {
         return Err(ApplyError::InvalidTransaction("Name required".into()));
     }
 
+    error!("STEP 3");
     let agent = match state.get_agent(signer)? {
         Some(agent) => agent,
         None => {
@@ -157,6 +160,7 @@ fn create_role(
 
     let name = &payload.get_name();
 
+    error!("STEP 4");
     if name.eq(&"admin") {
         return Err(ApplyError::InvalidTransaction(
             "Role name 'admin' is reserved for the Pike administrator and cannot be overwritten"
@@ -164,6 +168,7 @@ fn create_role(
         ));
     }
 
+    error!("STEP 5");
     if name.contains('.') {
         return Err(ApplyError::InvalidTransaction(
             "Role name is not properly formatted. Roles may not contain the '.' character. This \
@@ -172,6 +177,7 @@ fn create_role(
         ));
     }
 
+    error!("STEP 6");
     check_permission(
         perm_checker,
         signer,
@@ -179,6 +185,7 @@ fn create_role(
         &agent.org_id,
     )?;
 
+    error!("STEP 7");
     match state.get_role(payload.get_name(), payload.get_org_id()) {
         Ok(None) => (),
         Ok(Some(_)) => {
@@ -195,6 +202,7 @@ fn create_role(
         }
     };
 
+    error!("STEP 8");
     let role_builder = RoleBuilder::new();
     let role = role_builder
         .with_org_id(payload.get_org_id().to_string())
@@ -207,6 +215,7 @@ fn create_role(
         .build()
         .map_err(|err| ApplyError::InvalidTransaction(format!("Cannot build role: {}", err)))?;
 
+    error!("STEP 9");
     state
         .set_role(role)
         .map_err(|e| ApplyError::InternalError(format!("Failed to create role: {:?}", e)))

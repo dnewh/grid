@@ -141,3 +141,14 @@ impl FromStr for ConnectionUri {
         }
     }
 }
+
+impl std::fmt::Display for ConnectionUri {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        match *self {
+            #[cfg(feature = "postgres")]
+            ConnectionUri::Postgres(ref s) => write!(f, "{}", s),
+            #[cfg(feature = "sqlite")]
+            ConnectionUri::Sqlite(ref s) => write!(f, "{}", s),
+        }
+    }
+}

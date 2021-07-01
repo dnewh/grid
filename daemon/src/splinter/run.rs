@@ -65,9 +65,11 @@ pub fn run_splinter(config: GridConfig) -> Result<(), DaemonError> {
             .parse()
             .map_err(|err| DaemonError::from_source(Box::new(err)))?;
 
+        error!("About to check connection URI: {}", connection_uri);
         match connection_uri {
             #[cfg(feature = "database-postgres")]
             ConnectionUri::Postgres(_) => {
+                error!("Checking Postgres URI");
                 let connection_pool: ConnectionPool<diesel::pg::PgConnection> =
                     ConnectionPool::new(config.database_url())
                         .map_err(|err| DaemonError::from_source(Box::new(err)))?;

@@ -242,6 +242,7 @@ impl<Conn: EventConnection + 'static> EventProcessor<Conn> {
         last_known_commit_id: Option<&str>,
         event_handlers: Vec<Box<dyn EventHandler>>,
     ) -> Result<Self, EventProcessorError> {
+        error!("This is the start of the connection stuff");
         let unsubscriber = connection
             .subscribe(ALL_GRID_NAMESPACES, last_known_commit_id)
             .map_err(|err| EventProcessorError(format!("Unable to unsubscribe: {}", err)))?;
@@ -251,7 +252,10 @@ impl<Conn: EventConnection + 'static> EventProcessor<Conn> {
             .spawn(move || {
                 loop {
                     match connection.recv() {
-                        Ok(commit_event) => handle_message(commit_event, &event_handlers),
+                        Ok(commit_event) => {
+                            error!("CONNECTioN RECEIVED");
+                            handle_message(commit_event, &event_handlers)
+                        },
                         Err(EventIoError::InvalidMessage(msg)) => {
                             warn!("{}; ignoring...", msg);
                         }
@@ -266,7 +270,7 @@ impl<Conn: EventConnection + 'static> EventProcessor<Conn> {
                     "Disconnecting from {}; terminating Event Processor",
                     connection.name()
                 );
-
+                error!("About to close?");
                 if let Err(err) = connection.close() {
                     error!("Unable to close connection: {}", err);
                 }
@@ -300,6 +304,7 @@ impl<Conn: EventConnection + 'static> EventProcessor<Conn> {
 
 fn handle_message(event: CommitEvent, event_handlers: &[Box<dyn EventHandler>]) {
     for handler in event_handlers {
+        error!("About to handle message");
         if let Err(err) = handler.handle_event(&event) {
             error!("An error occurred while handling events: {}", err);
         }
